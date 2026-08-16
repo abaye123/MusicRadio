@@ -77,6 +77,18 @@ jobs:
         shell: bash
         run: ./gradlew :desktopApp:${{ matrix.task }} --no-daemon --stacktrace
 
+      # jpackage writes its real error to a file on the runner and Gradle only prints the path,
+      # so a failure is otherwise undiagnosable from the CI output alone.
+      - name: Show packaging logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          find desktopApp/build/compose/logs -type f 2>/dev/null | while read -r f; do
+            echo "===== $f"
+            cat "$f"
+          done
+          echo "(end of packaging logs)"
+
       - name: Collect installers
         uses: actions/upload-artifact@v5
         with:

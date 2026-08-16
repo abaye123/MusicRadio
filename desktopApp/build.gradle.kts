@@ -62,13 +62,17 @@ nucleus.application {
         targetFormats(TargetFormat.Dmg, TargetFormat.Zip, TargetFormat.Nsis, TargetFormat.Deb)
         packageName = "Music Radio"
         packageVersion = releaseVersion
-        vendor = "kdroidFilter"
+        vendor = "abaye"
         cleanupNativeLibs = true
         compressionLevel = CompressionLevel.Ultra
+        // electron-builder refuses to build a .deb without it: "Please specify project homepage".
+        homepage = "https://github.com/abaye123/MusicRadio"
 
         linux {
             iconFile.set(project.file("appIcons/LinuxIcon.png"))
             debPackageVersion = releaseVersion
+            // Likewise mandatory for .deb; the address only has to be well-formed.
+            debMaintainer = "abaye <abaye123@users.noreply.github.com>"
         }
         windows {
             iconFile.set(project.file("appIcons/WindowsIcon.ico"))

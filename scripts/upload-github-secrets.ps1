@@ -36,28 +36,27 @@ $secrets = [ordered]@{
     'ANDROID_KEY_PASSWORD'      = $values['ANDROID_KEY_PASSWORD']
 }
 
-# --body-file, not --body: passing the value as an argument would leave it in the process list,
-# and `--body -` is not a stdin shorthand - it stores a literal dash.
+# `gh secret set NAME` reads the value from stdin when --body is omitted. The redirection is done
+# by cmd rather than a PowerShell pipe: PowerShell 5.1 re-encodes and appends a newline when it
+# pipes into a native program, which is exactly how a keystore ends up corrupt. Passing the value
+# as an argument is avoided too, so it never appears in the process list.
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 foreach ($name in $secrets.Keys) {
     $value = $secrets[$name]
     if ([string]::IsNullOrWhiteSpace($value)) { throw "No value for $name in $props" }
 
-    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("gh-secret-" + [Guid]::NewGuid().ToString('N'))
+    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("gh-secret-" + [Guid]::NewGuid().ToString('N') + ".txt")
     try {
         # WriteAllText adds no trailing newline, so the secret is exactly the value.
         [System.IO.File]::WriteAllText($tmp, $value, $utf8NoBom)
-        gh secret set $name --repo $Repo --body-file $tmp
-        if ($LASTEXITCODE -ne 0) { throw "gh secret set $name failed" }
-        Write-Output ("set {0} ({1} chars)" -f $name, $value.Length)
+        cmd /c "gh secret set $name --repo $Repo < ""$tmp""" 2>&1 | ForEach-Object { Write-Output $_ }
+        if ($LASTEXITCODE -ne 0) { throw "gh secret set $name failed (exit $LASTEXITCODE)" }
+        Write-Output ("  set {0} - {1} chars" -f $name, $value.Length)
     } finally {
         if (Test-Path $tmp) { Remove-Item $tmp -Force }
     }
 }
 
 Write-Output ''
-Write-Output 'Secrets now on the repository:'
+Write-Output 'Secrets now on the repository (check the timestamps just moved):'
 gh secret list --repo $Repo
-
-Write-Output ''
-Write-Output 'Next: git tag v0.0.3-alpha; git push origin v0.0.3-alpha'
