@@ -93,13 +93,14 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: desktop-${{ matrix.os }}
-          # Matched by extension rather than by directory: the packaging tree also holds
-          # icons and electron-builder templates that must never reach a release page.
+          # Matched by extension so the glob survives per-format directory naming, but the
+          # app image is excluded outright: binaries/main/app holds the bare jpackage launcher,
+          # which is not an installer and cannot run without the directory around it.
           path: |
             desktopApp/build/compose/binaries/**/*.exe
             desktopApp/build/compose/binaries/**/*.deb
             desktopApp/build/compose/binaries/**/*.dmg
-            desktopApp/build/compose/binaries/**/*.blockmap
+            !desktopApp/build/compose/binaries/**/app/**
           if-no-files-found: error
 
   android:
@@ -129,11 +130,12 @@ jobs:
         shell: bash
         run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
 
-      # AGP 9 is happiest on 17, and every module here targets 17 bytecode anyway.
+      # The JVM that runs Gradle, not the bytecode target: the modules still compile to 17, but
+      # the Metro compiler plugin refuses to load on anything below 21.
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - uses: gradle/actions/setup-gradle@v5
 
@@ -210,8 +212,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
+          # No .blockmap: it is electron-builder's differential-update index, and nothing in
+          # the app consumes it yet. Add it back the day an auto-updater is wired in.
           find artifacts -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.dmg' \
-            -o -name '*.apk' -o -name '*.aab' -o -name '*.blockmap' \) \
+            -o -name '*.apk' -o -name '*.aab' \) \
             -exec cp {} release/ \;
           ls -la release
           # Every platform failing would otherwise produce an empty, confusing release page.
