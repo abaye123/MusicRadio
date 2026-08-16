@@ -73,28 +73,52 @@ Output lands under `desktopApp/build/compose/binaries/`.
 
 ```bash
 ./gradlew :androidApp:assembleDebug     # installable straight away, debug-signed
-./gradlew :androidApp:assembleRelease   # unsigned unless the keystore variables are set
+./gradlew :androidApp:assembleRelease   # .apk for direct install and for the GitHub release
 ./gradlew :androidApp:bundleRelease     # .aab for Play
 ```
 
 APKs land in `androidApp/build/outputs/apk/`, bundles in `androidApp/build/outputs/bundle/`.
 
-For a signed release, point the build at a keystore through the environment - nothing about
-signing is committed:
+Both release tasks sign automatically from `signing.local.properties` in the repository root,
+which is gitignored and holds four names:
 
-```bash
-export ANDROID_KEYSTORE_FILE=/path/to/release.jks
-export ANDROID_KEYSTORE_PASSWORD=...
-export ANDROID_KEY_ALIAS=...
-export ANDROID_KEY_PASSWORD=...
-./gradlew :androidApp:assembleRelease
+```properties
+ANDROID_KEYSTORE_FILE=C:/path/to/release.jks
+ANDROID_KEYSTORE_PASSWORD=...
+ANDROID_KEY_ALIAS=...
+ANDROID_KEY_PASSWORD=...
 ```
 
-Create one with:
+The same four are read from the environment when the file is absent, which is how CI signs. Without
+either the build still succeeds and leaves the output **unsigned**, so a contributor can produce one
+without holding the key. Create a keystore with:
 
 ```bash
 keytool -genkeypair -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias musicradio
 ```
+
+#### Cutting a Play bundle by hand
+
+Play rejects a bundle whose `versionCode` it has already seen, and a local build defaults to
+version `1.0.0` code `1`. Set both before building, using a code higher than anything uploaded
+before:
+
+```powershell
+$env:RELEASE_VERSION = "v1.0.2"   # becomes versionName 1.0.2
+$env:VERSION_CODE    = "3"        # must exceed every previous upload
+.\gradlew :androidApp:bundleRelease
+```
+
+The result is `androidApp/build/outputs/bundle/release/androidApp-release.aab`, ready to upload.
+Confirm it carries the release key rather than the debug one before you do:
+
+```bash
+keytool -printcert -jarfile androidApp/build/outputs/bundle/release/androidApp-release.aab
+```
+
+Releases cut from a tag build the same bundle in CI, but attach only the `.apk` to the GitHub
+release; the `.aab` stays a workflow artifact, since it is a Play upload format that nobody can
+install directly.
 
 ### Releases
 
