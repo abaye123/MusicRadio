@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  desktop:
+    name: Desktop - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      # One broken platform should not deny you the installers that did build.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            task: packageNsis
+          - name: Linux x64
+            os: ubuntu-latest
+            task: packageDeb
+          - name: Linux ARM64
+            os: ubuntu-24.04-arm
+            task: packageDeb
+          - name: macOS ARM64
+            os: macos-latest
+            task: packageDmg
+          - name: macOS Intel
+            os: macos-15-intel
+            task: packageDmg
+
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A manual run has no tag in ref_name, so fall back to the newest one.
+      - name: Resolve version for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
+
+      # desktopApp targets JVM 25; jpackage ships inside the JDK.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # Nucleus drives the installer step through electron-builder.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build installer
+        shell: bash
+        run: ./gradlew :desktopApp:${{ matrix.task }} --no-daemon --stacktrace
+
+      - name: Collect installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          # Matched by extension rather than by directory: the packaging tree also holds
+          # icons and electron-builder templates that must never reach a release page.
+          path: |
+            desktopApp/build/compose/binaries/**/*.exe
+            desktopApp/build/compose/binaries/**/*.deb
+            desktopApp/build/compose/binaries/**/*.dmg
+            desktopApp/build/compose/binaries/**/*.blockmap
+          if-no-files-found: error
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+      # Monotonic across runs, which is all Android asks of it.
+      VERSION_CODE: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
+
+      # AGP 9 is happiest on 17, and every module here targets 17 bytecode anyway.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Without the secret the build still runs and produces an unsigned APK, so a fork can
+      # verify a release builds without holding the signing key.
+      - name: Restore keystore
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "No ANDROID_KEYSTORE_BASE64 secret; the APK will be unsigned."
+            exit 0
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "path=$RUNNER_TEMP/release.jks" >> "$GITHUB_OUTPUT"
+
+      - name: Build APK and AAB
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ steps.keystore.outputs.path }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease --no-daemon --stacktrace
+
+      - name: Name the APK after the release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_VERSION#v}"
+          mkdir -p out
+          for f in androidApp/build/outputs/apk/release/*.apk; do
+            [ -e "$f" ] || continue
+            cp "$f" "out/MusicRadio-${version}.apk"
+          done
+          for f in androidApp/build/outputs/bundle/release/*.aab; do
+            [ -e "$f" ] || continue
+            cp "$f" "out/MusicRadio-${version}.aab"
+          done
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: [desktop, android]
+    # Publish whatever succeeded rather than losing a whole release to one dead runner.
+    if: ${{ !cancelled() && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten and list
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          find artifacts -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.dmg' \
+            -o -name '*.apk' -o -name '*.aab' -o -name '*.blockmap' \) \
+            -exec cp {} release/ \;
+          ls -la release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          # A tag carrying -alpha or -beta publishes as a prerelease.
+          flags=()
+          case "$tag" in
+            *-alpha*|*-beta*|*-rc*) flags+=(--prerelease) ;;
+          esac
+          gh release create "$tag" release/* \
+            --title "Music Radio ${tag#v}" \
+            --generate-notes \
+            "${flags[@]}"

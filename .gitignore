@@ -1,0 +1,27 @@
+
+*.iml
+.gradle
+.idea
+.kotlin
+.DS_Store
+build
+*/build
+captures
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata/
+Pods/
+
+# Release signing. The keystore and its passwords live only on the machines that cut releases;
+# CI gets the same values from repository secrets.
+*.jks
+*.keystore
+signing.local.properties
+*.gpg
+*yarn.lock
+/com/
+shared/src/commonMain/composeResources/files/aboutlibraries.json
+hs_err_pid*.log
+replay_pid*.log
+core.*
