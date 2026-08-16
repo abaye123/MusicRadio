@@ -97,18 +97,21 @@ class AppViewModel(
      * uses, so there is one code path for "pause", not two.
      */
     private fun bindMediaControls() {
-        if (!mediaControls.available) return
-        mediaControls.attach { command ->
-            when (command) {
-                MediaCommand.Toggle -> onIntent(AppIntent.TogglePlay)
-                MediaCommand.Play -> if (!_state.value.playback.status.active) onIntent(AppIntent.TogglePlay)
-                MediaCommand.Pause -> if (_state.value.playback.status.active) onIntent(AppIntent.TogglePlay)
-                MediaCommand.Next -> onIntent(AppIntent.NextStation)
-                MediaCommand.Previous -> onIntent(AppIntent.PreviousStation)
-                MediaCommand.Stop -> onIntent(AppIntent.Stop)
+        if (mediaControls.available) {
+            mediaControls.attach { command ->
+                when (command) {
+                    MediaCommand.Toggle -> onIntent(AppIntent.TogglePlay)
+                    MediaCommand.Play -> if (!_state.value.playback.status.active) onIntent(AppIntent.TogglePlay)
+                    MediaCommand.Pause -> if (_state.value.playback.status.active) onIntent(AppIntent.TogglePlay)
+                    MediaCommand.Next -> onIntent(AppIntent.NextStation)
+                    MediaCommand.Previous -> onIntent(AppIntent.PreviousStation)
+                    MediaCommand.Stop -> onIntent(AppIntent.Stop)
+                }
             }
         }
-        // Push every playback change back out, so the OS panel never shows a stale station.
+        // Runs whether or not MediaControls exists. Android has no implementation of it, yet its
+        // player still needs these names for the media session behind the notification and the
+        // lock screen - gating this on `available` left that session permanently blank.
         scope.launch {
             _state
                 .map { it.playback }
@@ -135,6 +138,8 @@ class AppViewModel(
             ),
             playback.status,
         )
+        // Android reads this off the player's own session rather than through MediaControls.
+        player.setNowPlaying(station = channelLabel, song = song)
     }
 
     /**

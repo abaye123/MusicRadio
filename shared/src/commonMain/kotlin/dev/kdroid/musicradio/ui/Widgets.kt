@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +89,23 @@ fun StationCard(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
                 StationArtwork(station, Modifier.fillMaxWidth().aspectRatio(1f))
+                // The star sits on the artwork rather than beside the title: in the row it landed
+                // on the opposite edge from the name and read as unrelated decoration.
+                Surface(
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    shape = CircleShape,
+                    color = colors.scrim.copy(alpha = 0.45f),
+                ) {
+                    IconButton(onClick = onToggleFavorite, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                            stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
+                            modifier = Modifier.size(20.dp),
+                            // White either way: the scrim guarantees contrast on any cover.
+                            tint = if (favorite) colors.primary else Color.White,
+                        )
+                    }
+                }
                 if (playing) {
                     Surface(
                         modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
@@ -98,29 +117,20 @@ fun StationCard(
                     }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(station.name),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = if (playing) colors.onPrimaryContainer else colors.onSurface,
-                    )
-                    Text(
-                        station.category.label(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (playing) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onToggleFavorite) {
-                    Icon(
-                        if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
-                        tint = if (favorite) colors.primary else colors.onSurfaceVariant,
-                    )
-                }
+            Column {
+                Text(
+                    stringResource(station.name),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (playing) colors.onPrimaryContainer else colors.onSurface,
+                )
+                Text(
+                    station.category.label(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (playing) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                )
             }
         }
     }

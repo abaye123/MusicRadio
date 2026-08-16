@@ -81,7 +81,7 @@ nucleus.application {
         }
         macOS {
             packageVersion = nativePackageVersion
-            bundleID = "dev.kdroid.musicradio.desktopApp"
+            bundleID = "co.abaye.musicradio"
         }
     }
 }

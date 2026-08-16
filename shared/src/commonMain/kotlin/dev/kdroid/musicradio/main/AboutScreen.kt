@@ -45,7 +45,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val DEVELOPER = "abaye"
 private const val DEVELOPER_URL = "https://github.com/abaye123"
-private const val REPO_LABEL = "github.com/MusicRadio"
+private const val REPO_LABEL = "github.com/abaye123/MusicRadio"
 private const val REPO_URL = "https://github.com/abaye123/MusicRadio"
 private const val ORIGINAL_LABEL = "KdroidRadioDesktop"
 private const val ORIGINAL_URL = "https://github.com/kdroidFilter/KdroidRadioDesktop"

@@ -18,6 +18,10 @@ nucleus = "2.4.3"
 # Audio engine: Media3 on Android, Rodio on desktop JVM. Built against Kotlin 2.4.10
 # and Compose runtime 1.11.1 - the same train as everything else here.
 composemediaplayer = "0.11.4"
+# Android plays through Media3 directly rather than through composemediaplayer: only an
+# ExoPlayer we own can be attached to a MediaSession, which is what buys background playback
+# and the notification and lock screen controls.
+media3 = "1.11.0"
 structured-coroutines = "1.1.0"
 detekt = "2.0.0-alpha.6"
 ktlint-gradle = "14.2.0"
@@ -62,6 +66,8 @@ nucleus-native-http = { module = "dev.nucleusframework:nucleus.native-http", ver
 nucleus-native-http-ktor = { module = "dev.nucleusframework:nucleus.native-http-ktor", version.ref = "nucleus" }
 nucleus-updater-runtime = { module = "dev.nucleusframework:nucleus.updater-runtime", version.ref = "nucleus" }
 composemediaplayer-audio = { module = "io.github.kdroidfilter:composemediaplayer-audio", version.ref = "composemediaplayer" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 structured-coroutines-annotations = { module = "io.github.santimattius:structured-coroutines-annotations", version.ref = "structured-coroutines" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 ktlint-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }

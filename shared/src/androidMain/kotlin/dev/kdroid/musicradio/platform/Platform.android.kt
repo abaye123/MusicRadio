@@ -20,6 +20,9 @@ fun bindAndroidContext(context: Context) {
 
 private fun ctx(): Context = requireNotNull(appContext) { "bindAndroidContext() must be called from AppActivity.onCreate" }
 
+/** The application context, for the pieces that need one before any composable exists. */
+internal fun androidContext(): Context = ctx()
+
 internal actual object Platform {
     actual val osLabel: String = "Android"
 

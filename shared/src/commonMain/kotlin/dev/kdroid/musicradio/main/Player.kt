@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.SkipNext
@@ -47,14 +49,18 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
 import dev.kdroid.musicradio.domain.Station
+import dev.kdroid.musicradio.domain.isFavorite
 import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.ui.StationArtwork
 import musicradio.shared.generated.resources.Res
+import musicradio.shared.generated.resources.favorite_add
+import musicradio.shared.generated.resources.favorite_remove
 import musicradio.shared.generated.resources.player_buffering
 import musicradio.shared.generated.resources.player_live
 import musicradio.shared.generated.resources.player_mute
@@ -175,9 +181,25 @@ fun MiniPlayerBar(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modi
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                FavoriteButton(state, onIntent)
                 PlayButton(state.playback.status, size = 44.dp) { onIntent(AppIntent.TogglePlay) }
             }
         }
+    }
+}
+
+/** Toggles the playing station, so it is reachable without going back to the grid. */
+@Composable
+private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size: Dp = 24.dp) {
+    val station = state.currentStation ?: return
+    val favorite = state.data.isFavorite(station.id)
+    IconButton(onClick = { onIntent(AppIntent.ToggleFavorite(station.id)) }) {
+        Icon(
+            if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
+            modifier = Modifier.size(size),
+            tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -212,7 +234,13 @@ fun NowPlayingScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: M
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        ChannelPicker(state, onIntent)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FavoriteButton(state, onIntent, size = 28.dp)
+            ChannelPicker(state, onIntent)
+        }
         TransportControls(state, onIntent, big = true)
         VolumeControl(state, onIntent, Modifier.fillMaxWidth())
     }

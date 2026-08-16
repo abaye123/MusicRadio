@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -49,6 +51,9 @@ import musicradio.shared.generated.resources.view_stations
 import musicradio.shared.generated.resources.view_streams
 import org.jetbrains.compose.resources.stringResource
 
+/** Shared by the search field and the view toggle so they line up exactly. */
+private val CONTROL_HEIGHT = 52.dp
+
 @Composable
 fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
     val stations = state.browsable
@@ -62,15 +67,19 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Pill shaped and the same height as the toggle beside it, so the row reads as one
+            // control strip rather than a text box parked next to some buttons.
             OutlinedTextField(
                 value = state.query,
                 onValueChange = { onIntent(AppIntent.SetSearchQuery(it)) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(CONTROL_HEIGHT),
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Outlined.Search, null) },
-                placeholder = { Text(stringResource(Res.string.stations_search)) },
+                shape = CircleShape,
+                leadingIcon = { Icon(Icons.Outlined.Search, null, Modifier.size(20.dp)) },
+                placeholder = { Text(stringResource(Res.string.stations_search), style = MaterialTheme.typography.bodyMedium) },
+                textStyle = MaterialTheme.typography.bodyMedium,
             )
-            ViewToggle(streamsView) { onIntent(AppIntent.SetStreamsView(it)) }
+            ViewToggle(streamsView, Modifier.height(CONTROL_HEIGHT)) { onIntent(AppIntent.SetStreamsView(it)) }
         }
         CategoryFilter(state, onIntent, Modifier.padding(vertical = 12.dp))
         if (streamsView) {

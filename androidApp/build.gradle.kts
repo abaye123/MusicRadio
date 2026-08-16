@@ -38,14 +38,16 @@ fun signingValue(name: String): String? =
 val keystorePath: String? = signingValue("ANDROID_KEYSTORE_FILE")
 
 android {
-    namespace = "dev.kdroid.musicradio.androidApp"
+    namespace = "co.abaye.musicradio"
     compileSdk = 37
 
     defaultConfig {
         minSdk = 26
         targetSdk = 37
 
-        applicationId = "dev.kdroid.musicradio.androidApp"
+        // Locked forever once the app is published: Play identifies an app by this string, and
+        // changing it later means a new listing with no users, ratings or install base.
+        applicationId = "co.abaye.musicradio"
         versionCode = releaseVersionCode
         versionName = releaseVersion
     }

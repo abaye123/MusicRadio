@@ -31,6 +31,15 @@ interface RadioPlayer {
     /** 0..100, matching what the volume slider shows. */
     fun setVolume(percent: Int)
     fun release()
+
+    /**
+     * What the OS should show for the current stream. Supplied by the app rather than read from
+     * the stream by the platform, because ICY carries no charset and the Hebrew stations that
+     * send windows-1255 come out as mojibake wherever it is assumed to be UTF-8.
+     *
+     * A no-op where the platform has nothing to display it on.
+     */
+    fun setNowPlaying(station: String, song: String) = Unit
 }
 
 /** Stands in wherever a real audio backend cannot run - unit tests, previews. */

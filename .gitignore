@@ -25,3 +25,6 @@ shared/src/commonMain/composeResources/files/aboutlibraries.json
 hs_err_pid*.log
 replay_pid*.log
 core.*
+
+# Gradle output captured while debugging; regenerated on every build.
+build-*.log

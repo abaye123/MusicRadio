@@ -4,8 +4,8 @@ import dev.kdroid.musicradio.platform.IoDispatcher
 import dev.kdroid.musicradio.player.IcyMetadata
 import dev.kdroid.musicradio.player.MediaControls
 import dev.kdroid.musicradio.player.RadioPlayer
-import dev.kdroid.musicradio.player.StreamRadioPlayer
 import dev.kdroid.musicradio.player.createMediaControls
+import dev.kdroid.musicradio.player.createRadioPlayer
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.ContributesTo
@@ -29,7 +29,7 @@ object AppBindings {
     // One backend per process: two live decoders would fight over the audio device.
     @Provides
     @SingleIn(AppScope::class)
-    fun provideRadioPlayer(): RadioPlayer = StreamRadioPlayer()
+    fun provideRadioPlayer(): RadioPlayer = createRadioPlayer()
 
     // Likewise one registration per process: the OS media center keys on the app, not the window.
     @Provides

@@ -427,7 +427,9 @@ object Stations {
             "lakewood_scoop",
             Res.string.station_lakewood_scoop,
             Res.drawable.station_lakewood_scoop,
-            StationCategory.News,
+            // Named "News" by the original catalog, but the mount reports itself as
+            // "Scoop Radio Music" and plays music.
+            StationCategory.Music,
             // /index.html/live was a broken carry-over; the DNAS mount is plain /live.
             "http://janus.shoutca.st:8869/live",
         ),
