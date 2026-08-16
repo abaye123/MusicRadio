@@ -212,10 +212,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          # No .blockmap: it is electron-builder's differential-update index, and nothing in
-          # the app consumes it yet. Add it back the day an auto-updater is wired in.
+          # Deliberately narrower than what the jobs uploaded:
+          #   .aab      is a Play upload format; downloading one gets you a file you cannot
+          #             install, so it stays a workflow artifact and never reaches the release.
+          #   .blockmap is electron-builder's differential-update index, and nothing in the app
+          #             consumes it yet. Add it back the day an auto-updater is wired in.
           find artifacts -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.dmg' \
-            -o -name '*.apk' -o -name '*.aab' \) \
+            -o -name '*.apk' \) \
             -exec cp {} release/ \;
           ls -la release
           # Every platform failing would otherwise produce an empty, confusing release page.
