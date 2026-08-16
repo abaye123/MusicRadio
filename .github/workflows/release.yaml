@@ -43,9 +43,16 @@ jobs:
       RELEASE_VERSION: ${{ github.ref_name }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      # git tracks the executable bit, and a wrapper committed from Windows arrives without it,
+      # which fails as exit 126 on every Unix runner. Cheap to re-assert here.
+      - name: Make the Gradle wrapper executable
+        if: runner.os != 'Windows'
+        shell: bash
+        run: chmod +x ./gradlew
 
       # A manual run has no tag in ref_name, so fall back to the newest one.
       - name: Resolve version for manual runs
@@ -54,24 +61,24 @@ jobs:
         run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
 
       # desktopApp targets JVM 25; jpackage ships inside the JDK.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
 
       # Nucleus drives the installer step through electron-builder.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Build installer
         shell: bash
         run: ./gradlew :desktopApp:${{ matrix.task }} --no-daemon --stacktrace
 
       - name: Collect installers
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: desktop-${{ matrix.os }}
           # Matched by extension rather than by directory: the packaging tree also holds
@@ -94,9 +101,16 @@ jobs:
       VERSION_CODE: ${{ github.run_number }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      # git tracks the executable bit, and a wrapper committed from Windows arrives without it,
+      # which fails as exit 126 on every Unix runner. Cheap to re-assert here.
+      - name: Make the Gradle wrapper executable
+        if: runner.os != 'Windows'
+        shell: bash
+        run: chmod +x ./gradlew
 
       - name: Resolve version for manual runs
         if: github.event_name == 'workflow_dispatch'
@@ -104,12 +118,12 @@ jobs:
         run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
 
       # AGP 9 is happiest on 17, and every module here targets 17 bytecode anyway.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # Without the secret the build still runs and produces an unsigned APK, so a fork can
       # verify a release builds without holding the signing key.
@@ -124,7 +138,13 @@ jobs:
             echo "No ANDROID_KEYSTORE_BASE64 secret; the APK will be unsigned."
             exit 0
           fi
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          # Whitespace is stripped first: a secret uploaded from Windows carries CRLF, and
+          # `base64 -d` rejects the stray carriage returns outright.
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/release.jks"
+          if [ ! -s "$RUNNER_TEMP/release.jks" ]; then
+            echo "Decoded keystore is empty - check the ANDROID_KEYSTORE_BASE64 secret." >&2
+            exit 1
+          fi
           echo "path=$RUNNER_TEMP/release.jks" >> "$GITHUB_OUTPUT"
 
       - name: Build APK and AAB
@@ -152,7 +172,7 @@ jobs:
           done
           ls -la out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: android
           path: out/*
@@ -167,9 +187,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -182,6 +202,11 @@ jobs:
             -o -name '*.apk' -o -name '*.aab' -o -name '*.blockmap' \) \
             -exec cp {} release/ \;
           ls -la release
+          # Every platform failing would otherwise produce an empty, confusing release page.
+          if [ -z "$(ls -A release)" ]; then
+            echo "No installers were produced - refusing to publish an empty release." >&2
+            exit 1
+          fi
 
       - name: Create GitHub release
         env:
