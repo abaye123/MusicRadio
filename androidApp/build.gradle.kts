@@ -87,4 +87,12 @@ kotlin {
 dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activityCompose)
+    // Contributes res/raw/netfree_*.crt and a manifest entry pointing at
+    // @xml/network_security_config. It carries no code, which is why it sits here rather than in
+    // :shared: what it changes is how this application trusts TLS, not what any Kotlin calls.
+    // Streams on a NetFree line are re-signed by NetFree's own CA, and an Android app trusts only
+    // the system store by default, so without this every https:// station fails to handshake on a
+    // filtered device - including one where the certificate is installed at user level, which
+    // API 24 and above ignore.
+    implementation(libs.netfreetools.certificates)
 }
