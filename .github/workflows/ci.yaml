@@ -1,0 +1,79 @@
+name: CI
+
+# Every pull request gets compiled and tested before anyone reads it. The release workflow only
+# runs on a tag, so without this a broken merge is discovered by cutting a broken release.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same branch makes the previous run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and desktop compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # git tracks the executable bit, and a wrapper committed from Windows arrives without it.
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      # Same JDK the desktop release job uses; desktopApp targets JVM 25.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # commonTest compiles into every target's test source set; the JVM one is the cheapest to run
+      # and covers all of it.
+      - name: Run tests
+        run: ./gradlew :shared:jvmTest --no-daemon --stacktrace
+
+      - name: Compile desktop
+        run: ./gradlew :desktopApp:compileKotlin --no-daemon --stacktrace
+
+      # The HTML report says which assertion failed; the console output usually does not.
+      - name: Collect test reports
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports
+          path: |
+            shared/build/reports/tests/**
+            shared/build/test-results/**
+          if-no-files-found: ignore
+
+  android:
+    name: Android compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      # The JVM that runs Gradle, not the bytecode target: the modules still compile to 17, but
+      # the Metro compiler plugin refuses to load on anything below 21, and AGP is not yet happy
+      # on the 25 the desktop job uses.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # Debug rather than release: this proves the code compiles and links without needing the
+      # signing secrets, which a pull request from a fork cannot read anyway.
+      - name: Assemble debug APK
+        run: ./gradlew :androidApp:assembleDebug --no-daemon --stacktrace
