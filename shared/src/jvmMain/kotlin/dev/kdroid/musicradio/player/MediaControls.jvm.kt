@@ -13,7 +13,7 @@ private class NucleusMediaControls : MediaControls {
     override val available: Boolean = true
 
     init {
-        MediaControlService.configure(displayName = APP_DISPLAY_NAME)
+        MediaControlService.configure(dbusName = MPRIS_BUS_NAME, displayName = APP_DISPLAY_NAME)
     }
 
     override fun attach(onCommand: (MediaCommand) -> Unit) {
@@ -64,5 +64,15 @@ private class NucleusMediaControls : MediaControls {
 
     private companion object {
         const val APP_DISPLAY_NAME = "Music Radio"
+
+        // Left to itself, Nucleus builds the MPRIS name from app.id, which the plugin injects
+        // verbatim from packageName - "Music Radio", space included. A space is illegal in a
+        // D-Bus well-known name: g_bus_own_name() asserts and returns without ever calling
+        // on_name_acquired or on_name_lost, so the native attach() waits on a condition variable
+        // nothing will signal. It runs on the Tao main thread during first composition, which
+        // means the window never appears and the process keeps holding the single-instance lock.
+        // Passing a legal name of our own sidesteps all of it.
+        // https://github.com/NucleusFramework/Nucleus/issues/548
+        const val MPRIS_BUS_NAME = "org.mpris.MediaPlayer2.MusicRadio"
     }
 }
