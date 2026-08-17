@@ -80,9 +80,10 @@ jobs:
         # so the 60/hour anonymous limit is routinely exhausted - authenticate the call.
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # compatibility march: the runner's own CPU features would otherwise be baked in, and
-        # the image would die with SIGILL on any older machine that downloads the installer.
-        run: ./gradlew :desktopApp:${{ matrix.task }} -PnativeMarch=compatibility --no-daemon --stacktrace
+        # The compatibility march that keeps the image off the runner's own CPU features is set in
+        # desktopApp/build.gradle.kts, where the plugin reads it. Nothing here consumes a
+        # -PnativeMarch property, so passing one only reads as protection that is not there.
+        run: ./gradlew :desktopApp:${{ matrix.task }} --no-daemon --stacktrace
 
       # native-image and electron-builder both write their real error to a file on the runner and
       # Gradle only prints the path, so a failure is otherwise undiagnosable from the CI output.

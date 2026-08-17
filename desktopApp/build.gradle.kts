@@ -1,4 +1,5 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
+import dev.nucleusframework.desktop.application.dsl.NativeImageMarch
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -48,6 +49,11 @@ nucleus.application {
         isEnabled = true
         imageName = "MusicRadio"
         optimization = NativeImageOptimization.SIZE
+        // Without this, native-image bakes in whatever instruction set the build machine happens
+        // to have, and the binary dies with SIGILL on any older CPU that downloads it. The release
+        // runners are newer than plenty of machines the app is meant to run on, so the ceiling has
+        // to be set here rather than left to the builder.
+        march = NativeImageMarch.COMPATIBILITY
     }
 
     nativeDistributions {
