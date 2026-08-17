@@ -53,9 +53,22 @@ fun MessageBar(message: AppMessage?, onDismiss: () -> Unit, modifier: Modifier =
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(shown?.text().orEmpty(), style = MaterialTheme.typography.bodyMedium)
+                // The weight is what keeps the button readable. A Row hands every unweighted child
+                // the full width it asks for, in order, and the stream error is a whole sentence:
+                // on a phone it claimed the entire row and left the button a few pixels, which
+                // Compose fills by breaking the label one character per line. Weighted, the text
+                // gets whatever the button did not take and wraps on word boundaries instead.
+                Text(
+                    shown?.text().orEmpty(),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(Res.string.dialog_dismiss), color = MaterialTheme.colorScheme.inversePrimary)
+                    Text(
+                        stringResource(Res.string.dialog_dismiss),
+                        color = MaterialTheme.colorScheme.inversePrimary,
+                        maxLines = 1,
+                    )
                 }
             }
         }
