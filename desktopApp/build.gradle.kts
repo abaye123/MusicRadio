@@ -1,8 +1,6 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
-import dev.nucleusframework.desktop.application.dsl.GraalvmDistribution
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
-import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -48,14 +46,8 @@ nucleus.application {
 
     graalvm {
         isEnabled = true
-        javaLanguageVersion = 25
-        jvmVendor = JvmVendorSpec.ORACLE
         imageName = "MusicRadio"
-        // -O3 and PGO only exist on Oracle GraalVM. Community would silently stay on -O2.
-        toolchain {
-            distribution = GraalvmDistribution.ORACLE
-        }
-        optimization = NativeImageOptimization.LEVEL_3
+        optimization = NativeImageOptimization.SIZE
     }
 
     nativeDistributions {
