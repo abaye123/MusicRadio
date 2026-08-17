@@ -356,7 +356,10 @@
                            : /x64|x86_64|amd64|intel/i.test(name) ? "x64" : "";
     for (const a of assets) {
       const n = a.name;
-      if (/\.blockmap$/i.test(n) || /\.aab$/i.test(n)) continue;   // update index and Play bundle
+      // Update index, Play bundle, and the macOS updater payload the install script consumes.
+      // A visitor here wants the .dmg; the .zip would only be a second macOS button that
+      // installs nothing on its own.
+      if (/\.blockmap$/i.test(n) || /\.aab$/i.test(n) || /\.zip$/i.test(n)) continue;
       let os = null;
       if (/\.exe$/i.test(n)) os = "windows";
       else if (/\.dmg$/i.test(n)) os = "macos";

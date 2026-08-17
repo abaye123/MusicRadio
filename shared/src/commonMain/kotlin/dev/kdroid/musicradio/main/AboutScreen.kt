@@ -91,11 +91,19 @@ private fun AboutHeader() {
             }
         }
 
-        Text(
-            stringResource(Res.string.about_version, Platform.appVersion.ifEmpty { "1.0.0" }),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Only shown when the platform actually reports a version, which a packaged build always
+        // does and a run from source never does. A hardcoded fallback used to stand in here, so a
+        // build that stopped carrying its version claimed to be 1.0.0 for as long as nobody
+        // noticed - and the version line is the one thing a user reads to check exactly that.
+        // The sidebar hides itself the same way.
+        val version = Platform.appVersion
+        if (version.isNotEmpty()) {
+            Text(
+                stringResource(Res.string.about_version, version),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         CreditRow {
             Image(
