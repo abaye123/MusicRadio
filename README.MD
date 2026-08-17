@@ -47,24 +47,23 @@ Hot reload:
 
 ### Desktop installers
 
-Two packagers are wired up. **jpackage** is the default: it needs nothing beyond the JDK and Node,
-and the runtime it bundles carries no redistribution strings.
-
-```bash
-./gradlew :desktopApp:packageNsis   # Windows .exe installer
-./gradlew :desktopApp:packageDeb    # Linux .deb
-./gradlew :desktopApp:packageDmg    # macOS .dmg
-```
-
-**GraalVM native images** start faster and use less memory, at the cost of a ~1 GB toolchain
-download per machine. This project is configured for *Oracle* GraalVM, whose terms permit
-redistribution only while you charge nothing for the result - switch to
-`GraalvmDistribution.COMMUNITY` in `desktopApp/build.gradle.kts` if that ever stops being true.
+Two packagers are wired up. **GraalVM native images** are what the release workflow ships: they
+start faster and use less memory, at the cost of a ~1 GB toolchain download per machine and a much
+longer build. The distribution is GraalVM Community, which carries no redistribution strings.
 
 ```bash
 ./gradlew :desktopApp:packageGraalvmNsis
 ./gradlew :desktopApp:packageGraalvmDeb
 ./gradlew :desktopApp:packageGraalvmDmg
+```
+
+**jpackage** needs nothing beyond the JDK and Node and builds in a fraction of the time, which
+makes it the practical choice for a quick local installer:
+
+```bash
+./gradlew :desktopApp:packageNsis   # Windows .exe installer
+./gradlew :desktopApp:packageDeb    # Linux .deb
+./gradlew :desktopApp:packageDmg    # macOS .dmg
 ```
 
 Output lands under `desktopApp/build/compose/binaries/`.

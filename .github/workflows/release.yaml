@@ -15,9 +15,10 @@ concurrency:
 
 jobs:
   desktop:
-    name: Desktop - ${{ matrix.name }}
+    name: Desktop (GraalVM) - ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    # A native image takes far longer to build than a jpackage runtime image.
+    timeout-minutes: 90
     strategy:
       # One broken platform should not deny you the installers that did build.
       fail-fast: false
@@ -25,19 +26,19 @@ jobs:
         include:
           - name: Windows x64
             os: windows-latest
-            task: packageNsis
+            task: packageGraalvmNsis
           - name: Linux x64
             os: ubuntu-latest
-            task: packageDeb
+            task: packageGraalvmDeb
           - name: Linux ARM64
             os: ubuntu-24.04-arm
-            task: packageDeb
+            task: packageGraalvmDeb
           - name: macOS ARM64
             os: macos-latest
-            task: packageDmg
+            task: packageGraalvmDmg
           - name: macOS Intel
             os: macos-15-intel
-            task: packageDmg
+            task: packageGraalvmDmg
 
     env:
       RELEASE_VERSION: ${{ github.ref_name }}
@@ -60,25 +61,32 @@ jobs:
         shell: bash
         run: echo "RELEASE_VERSION=$(git describe --tags --abbrev=0)" >> "$GITHUB_ENV"
 
-      # desktopApp targets JVM 25; jpackage ships inside the JDK.
-      - uses: actions/setup-java@v5
+      # JDK 25 for Gradle, Node for the electron-builder packaging step, and the native-image
+      # prerequisites (MSVC/Xcode plus the toolchain cache). The GraalVM JDK itself is downloaded
+      # by the Nucleus plugin, per the graalvm { } block in desktopApp/build.gradle.kts.
+      - name: Setup Nucleus (GraalVM)
+        uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v2.4.3
         with:
-          distribution: temurin
           java-version: '25'
+          graalvm: 'true'
+          graalvm-distribution: community
+          packaging-tools: 'true'
+          setup-gradle: 'true'
+          setup-node: 'true'
 
-      # Nucleus drives the installer step through electron-builder.
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
-      - uses: gradle/actions/setup-gradle@v5
-
-      - name: Build installer
+      - name: Build native installer
         shell: bash
+        # GraalVM CE is resolved through the GitHub releases API. Hosted runners share an IP,
+        # so the 60/hour anonymous limit is routinely exhausted - authenticate the call.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        # The compatibility march that keeps the image off the runner's own CPU features is set in
+        # desktopApp/build.gradle.kts, where the plugin reads it. Nothing here consumes a
+        # -PnativeMarch property, so passing one only reads as protection that is not there.
         run: ./gradlew :desktopApp:${{ matrix.task }} --no-daemon --stacktrace
 
-      # jpackage writes its real error to a file on the runner and Gradle only prints the path,
-      # so a failure is otherwise undiagnosable from the CI output alone.
+      # native-image and electron-builder both write their real error to a file on the runner and
+      # Gradle only prints the path, so a failure is otherwise undiagnosable from the CI output.
       - name: Show packaging logs on failure
         if: failure()
         shell: bash
@@ -93,14 +101,13 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: desktop-${{ matrix.os }}
-          # Matched by extension so the glob survives per-format directory naming, but the
-          # app image is excluded outright: binaries/main/app holds the bare jpackage launcher,
-          # which is not an installer and cannot run without the directory around it.
+          # Installers only, scoped to the graalvm-* output directories: those also hold the
+          # electron-builder scratch files (package.json, linux-icons/*.png) and the bare native
+          # binary, none of which belong in a release.
           path: |
-            desktopApp/build/compose/binaries/**/*.exe
-            desktopApp/build/compose/binaries/**/*.deb
-            desktopApp/build/compose/binaries/**/*.dmg
-            !desktopApp/build/compose/binaries/**/app/**
+            desktopApp/build/compose/binaries/**/graalvm-nsis/*.exe
+            desktopApp/build/compose/binaries/**/graalvm-deb/*.deb
+            desktopApp/build/compose/binaries/**/graalvm-dmg/*.dmg
           if-no-files-found: error
 
   android:
