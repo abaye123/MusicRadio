@@ -19,6 +19,7 @@ import dev.kdroid.musicradio.player.NoMediaControls
 import dev.kdroid.musicradio.player.NowPlaying
 import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.player.RadioPlayer
+import dev.kdroid.musicradio.player.mediaArtworkUri
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -123,8 +124,8 @@ class AppViewModel(
     private suspend fun publishNowPlaying(playback: PlaybackState) {
         val station = Stations.of(playback.stationId)
         val stationName = station?.let { runCatching { getString(it.name) }.getOrNull() }.orEmpty()
-        val channelTitle = Stations.channel(playback.channelId)?.title
-        val channelLabel = channelTitle ?: stationName
+        val channel = Stations.channel(playback.channelId)
+        val channelLabel = channel?.title ?: stationName
         // Most stations send "Artist - Track"; when they don't, the whole string is the title.
         val song = playback.nowPlaying
         val separator = song.indexOf(" - ")
@@ -135,6 +136,12 @@ class AppViewModel(
                 station = stationName,
                 title = songTitle.ifBlank { channelLabel },
                 artist = songArtist.ifBlank { if (song.isBlank()) channelLabel else stationName },
+                // A channel only carries its own cover when the broadcaster publishes one;
+                // otherwise the station logo stands in, exactly as in the station list.
+                artworkUri = mediaArtworkUri(
+                    id = playback.channelId.ifEmpty { playback.stationId },
+                    artwork = channel?.artwork ?: station?.artwork,
+                ),
             ),
             playback.status,
         )

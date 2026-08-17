@@ -5,12 +5,17 @@ import androidx.compose.runtime.Immutable
 /** What the OS media center can ask the app to do. */
 enum class MediaCommand { Play, Pause, Toggle, Next, Previous, Stop }
 
-/** What the OS media center shows about the current stream. */
+/**
+ * What the OS media center shows about the current stream.
+ *
+ * [artworkUri] points at a file the media center can open on its own - see [mediaArtworkUri].
+ */
 @Immutable
 data class NowPlaying(
     val station: String = "",
     val title: String = "",
     val artist: String = "",
+    val artworkUri: String? = null,
 )
 
 /**
