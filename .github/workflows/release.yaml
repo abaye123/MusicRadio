@@ -26,19 +26,20 @@ jobs:
         include:
           - name: Windows x64
             os: windows-latest
-            task: packageGraalvmNsis
+            tasks: :desktopApp:packageGraalvmNsis
           - name: Linux x64
             os: ubuntu-latest
-            task: packageGraalvmDeb
+            tasks: :desktopApp:packageGraalvmDeb
           - name: Linux ARM64
             os: ubuntu-24.04-arm
-            task: packageGraalvmDeb
+            tasks: :desktopApp:packageGraalvmDeb
+          # Zip is the silent macOS updater payload; the .dmg stays the first-install image.
           - name: macOS ARM64
             os: macos-latest
-            task: packageGraalvmDmg
+            tasks: :desktopApp:packageGraalvmDmg :desktopApp:packageGraalvmZip
           - name: macOS Intel
             os: macos-15-intel
-            task: packageGraalvmDmg
+            tasks: :desktopApp:packageGraalvmDmg :desktopApp:packageGraalvmZip
 
     env:
       RELEASE_VERSION: ${{ github.ref_name }}
@@ -82,7 +83,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         # compatibility march: the runner's own CPU features would otherwise be baked in, and
         # the image would die with SIGILL on any older machine that downloads the installer.
-        run: ./gradlew :desktopApp:${{ matrix.task }} -PnativeMarch=compatibility --no-daemon --stacktrace
+        run: ./gradlew ${{ matrix.tasks }} -PnativeMarch=compatibility --no-daemon --stacktrace
 
       # native-image and electron-builder both write their real error to a file on the runner and
       # Gradle only prints the path, so a failure is otherwise undiagnosable from the CI output.
@@ -107,6 +108,7 @@ jobs:
             desktopApp/build/compose/binaries/**/graalvm-nsis/*.exe
             desktopApp/build/compose/binaries/**/graalvm-deb/*.deb
             desktopApp/build/compose/binaries/**/graalvm-dmg/*.dmg
+            desktopApp/build/compose/binaries/**/graalvm-zip/*.zip
           if-no-files-found: error
 
   android:
@@ -223,8 +225,9 @@ jobs:
           #             install, so it stays a workflow artifact and never reaches the release.
           #   .blockmap is electron-builder's differential-update index, and nothing in the app
           #             consumes it yet. Add it back the day an auto-updater is wired in.
+          #   .zip      is macOS only and rides along for the updater, which cannot consume a .dmg.
           find artifacts -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.dmg' \
-            -o -name '*.apk' \) \
+            -o -name '*.zip' -o -name '*.apk' \) \
             -exec cp {} release/ \;
           ls -la release
           # Every platform failing would otherwise produce an empty, confusing release page.

@@ -30,6 +30,20 @@ desktopApp/   desktop entry point (Nucleus decorated window)
 androidApp/   Android entry point (single activity)
 ```
 
+## Install
+
+macOS:
+
+```bash
+curl -L https://raw.githubusercontent.com/abaye123/MusicRadio/main/download/launch.mac | bash
+```
+
+The script pulls the `.zip` matching the machine's CPU from the latest release, installs it into
+`/Applications` and clears the quarantine flag the app would otherwise trip on, being unsigned.
+
+Prebuilt packages (DMG, NSIS, Deb, APK) are also on
+[GitHub Releases](https://github.com/abaye123/MusicRadio/releases).
+
 ## Running from source
 
 ```bash
@@ -55,6 +69,7 @@ longer build. The distribution is GraalVM Community, which carries no redistribu
 ./gradlew :desktopApp:packageGraalvmNsis
 ./gradlew :desktopApp:packageGraalvmDeb
 ./gradlew :desktopApp:packageGraalvmDmg
+./gradlew :desktopApp:packageGraalvmZip   # macOS updater payload
 ```
 
 **jpackage** needs nothing beyond the JDK and Node and builds in a fraction of the time, which
