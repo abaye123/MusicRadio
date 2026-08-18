@@ -161,7 +161,10 @@ tasks.matching {
 composeStabilityAnalyzer {
     stabilityConfigurationFiles.add(stabilityConfig)
     traceAll {
-        enabled.set(true)
+        // `variants` only filters Android compilations - the plugin instruments every non-Android
+        // main compilation whenever this is on, so leaving it hardcoded shipped recomposition
+        // logging in every desktop and web release. Opt in locally with -PcomposeTraceAll.
+        enabled.set(providers.gradleProperty("composeTraceAll").map(String::toBoolean).orElse(false))
         threshold.set(2)
         variants.set(listOf("debug"))
     }
