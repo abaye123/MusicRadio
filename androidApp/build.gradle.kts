@@ -65,9 +65,12 @@ android {
 
     buildTypes {
         release {
-            // R8 is off on purpose: Metro, Ktor and Compose Resources all resolve reflectively,
-            // and a stripped release that only fails at runtime is worse than a larger APK.
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             // Without a keystore the build still succeeds and leaves the APK unsigned, so a
             // contributor can produce one locally without holding the release key.
             signingConfig = signingConfigs.findByName("release")
