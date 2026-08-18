@@ -2,6 +2,7 @@ package dev.kdroid.musicradio.player
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.MediaItem
@@ -13,6 +14,7 @@ import androidx.media3.session.SessionToken
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 import java.util.concurrent.Executor
 
 /**
@@ -43,6 +45,8 @@ internal class MediaSessionRadioPlayer(context: Context) : RadioPlayer {
     private var currentUrl: String? = null
     private var station: String = ""
     private var song: String = ""
+    private var artworkUri: String? = null
+    private var artworkBytes: ByteArray? = null
 
     private val listener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) = publish()
@@ -84,10 +88,14 @@ internal class MediaSessionRadioPlayer(context: Context) : RadioPlayer {
         }
     }
 
-    override fun setNowPlaying(station: String, song: String) {
-        if (this.station == station && this.song == song) return
+    override fun setNowPlaying(station: String, song: String, artworkUri: String?) {
+        if (this.station == station && this.song == song && this.artworkUri == artworkUri) return
         this.station = station
         this.song = song
+        this.artworkUri = artworkUri
+        // Read here, not on the main looper mediaItem() posts to: these are a few kilobytes, and
+        // this method is already called from the ViewModel's background dispatcher.
+        this.artworkBytes = artworkBytesOf(artworkUri)
         val url = currentUrl ?: return
         onController { controller ->
             // Replacing an item whose URI is unchanged only swaps the metadata; the stream keeps
@@ -96,20 +104,33 @@ internal class MediaSessionRadioPlayer(context: Context) : RadioPlayer {
         }
     }
 
-    private fun mediaItem(url: String): MediaItem = MediaItem.Builder()
-        .setUri(url)
-        .setMediaMetadata(
-            MediaMetadata.Builder()
-                // Song on top when the stream reports one, station underneath; with no song the
-                // station takes the title line so the notification is never blank.
-                .setTitle(song.ifBlank { station }.ifBlank { null })
-                .setArtist(station.takeIf { it.isNotBlank() && song.isNotBlank() })
-                .setStation(station.takeIf { it.isNotBlank() })
-                .setIsBrowsable(false)
-                .setIsPlayable(true)
-                .build(),
-        )
-        .build()
+    private fun mediaItem(url: String): MediaItem {
+        val cover = artworkUri?.let(Uri::parse)
+        return MediaItem.Builder()
+            .setUri(url)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    // Song on top when the stream reports one, station underneath; with no song the
+                    // station takes the title line so the notification is never blank.
+                    .setTitle(song.ifBlank { station }.ifBlank { null })
+                    .setArtist(station.takeIf { it.isNotBlank() && song.isNotBlank() })
+                    .setStation(station.takeIf { it.isNotBlank() })
+                    .setArtworkUri(cover)
+                    // artworkUri is what Media3's loader would fetch; artworkData is what actually
+                    // reaches the notification, lock screen and Android Auto, which cannot open
+                    // our cache file.
+                    .setArtworkData(artworkBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .build(),
+            )
+            .build()
+    }
+
+    private fun artworkBytesOf(uri: String?): ByteArray? {
+        val path = uri?.let(Uri::parse)?.path ?: return null
+        return runCatching { File(path).takeIf(File::isFile)?.readBytes() }.getOrNull()
+    }
 
     override fun resume() {
         _status.value = PlaybackStatus.Buffering

@@ -39,6 +39,7 @@ private class NucleusMediaControls : MediaControls {
                 title = nowPlaying.title.ifBlank { nowPlaying.station }.takeIf { it.isNotBlank() },
                 artist = nowPlaying.artist.takeIf { it.isNotBlank() },
                 album = nowPlaying.station.takeIf { it.isNotBlank() },
+                coverUrl = nowPlaying.artworkUri,
                 // A live stream has no length; -1 tells the OS to hide the scrubber.
                 duration = null,
             ),
