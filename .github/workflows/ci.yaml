@@ -88,7 +88,14 @@ jobs:
       # at runtime - blank artwork, or no HTTP engine the moment a stream is opened.
       - name: Check R8 kept what is loaded dynamically
         run: |
-          apk=androidApp/build/outputs/apk/release/androidApp-release.apk
+          # Globbed, not named: with no keystore AGP writes androidApp-release-unsigned.apk,
+          # while a local build holding the release key writes androidApp-release.apk.
+          apk=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -1)
+          if [ -z "$apk" ]; then
+            echo '::error::assembleRelease produced no APK'
+            exit 1
+          fi
+          echo "checking $apk"
           entries=$(unzip -l "$apk")
 
           if ! grep -q 'META-INF/services/io.ktor.client.HttpClientEngineContainer' <<< "$entries"; then
