@@ -104,6 +104,34 @@ aboutLibraries {
     }
 }
 
+/**
+ * Publishes the Hebrew bundle a second time under the language code Android insists on.
+ *
+ * Compose Resources chooses a `values-*` directory by comparing its qualifier with
+ * `Locale.getLanguage()`, and that call on Android still answers with the ISO 639 codes retired in
+ * 1989: a Hebrew locale reports "iw" and never "he", whichever way the locale was built. aapt2
+ * papers over this for native Android resources by rewriting values-he as it packages; Compose
+ * Resources has its own loader and does not, so values-he was unreachable on every Android device
+ * and the interface stayed English both when the system language was Hebrew and after an explicit
+ * pick in Settings. Desktop never showed it: JDK 17 and later report the modern codes, so the same
+ * build reads values-he there.
+ *
+ * Generated rather than committed so the translation keeps a single source, the same way the
+ * about-libraries data is produced into composeResources. Drop it once Compose Resources maps the
+ * legacy codes itself.
+ */
+val mirrorHebrewStringsForAndroid by tasks.registering(Copy::class) {
+    val resources = layout.projectDirectory.dir("src/commonMain/composeResources")
+    from(resources.dir("values-he"))
+    into(resources.dir("values-iw"))
+}
+
+// Every stage of the resource pipeline reads the directory the mirror writes into, so all of them
+// have to wait for it - naming them one by one only invited Gradle to find the one that was missed.
+tasks.matching { it.name.endsWith("ForCommonMain") }.configureEach {
+    dependsOn(mirrorHebrewStringsForAndroid)
+}
+
 tasks.matching {
     it.name.startsWith("generateResourceAccessorsForCommonMain") ||
         it.name.startsWith("copyNonXmlValueResourcesForCommonMain") ||

@@ -12,9 +12,18 @@ enum class UiLanguage(val code: String, val label: String, val rtl: Boolean) {
     ;
 
     companion object {
+        /**
+         * ISO 639 renamed three languages in 1989 and Java kept the old codes for compatibility.
+         * Android never moved: `Locale.getLanguage()` there answers "iw" for Hebrew no matter how
+         * the locale was built, so the OS language has to come through this map or every Hebrew
+         * device reads as English. Desktop is on JDK 17 or later, which returns the modern codes.
+         */
+        private val LEGACY_CODES = mapOf("iw" to "he", "ji" to "yi", "in" to "id")
+
         fun fromCode(raw: String): UiLanguage {
             val code = raw.substringBefore('-').substringBefore('_').lowercase()
-            return entries.firstOrNull { it.code == code } ?: English
+            val current = LEGACY_CODES[code] ?: code
+            return entries.firstOrNull { it.code == current } ?: English
         }
     }
 }
