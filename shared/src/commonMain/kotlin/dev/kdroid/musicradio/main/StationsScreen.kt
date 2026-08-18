@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
@@ -53,6 +55,34 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Shared by the search field and the view toggle so they line up exactly. */
 private val CONTROL_HEIGHT = 52.dp
+
+/** Both grids space their cells the same way, and the column maths has to agree with it. */
+private val GRID_SPACING = 12.dp
+
+/** How wide a tile wants to be before the grid starts adding columns of its own accord. */
+private val TILE_MIN_WIDTH = 170.dp
+
+/**
+ * [GridCells.Adaptive] with a floor under the column count.
+ *
+ * Two cells of [TILE_MIN_WIDTH] plus the spacing between them and the 20dp of screen padding on
+ * each side want a 392dp window, and plenty of Android phones are narrower than that: a 360dp
+ * screen leaves 320dp, one of the small 480x640 hdpi handsets leaves 280dp. Adaptive answers that
+ * with a single column, so one station filled the width and browsing the catalogue became a page
+ * of scrolling per tile. With a floor the cells simply get narrower instead - 134dp on the
+ * smallest of them, which the square artwork and its two lines of text take without reflowing.
+ */
+private data class AdaptiveAtLeast(private val minSize: Dp, private val minColumns: Int) : GridCells {
+    override fun Density.calculateCrossAxisCellSizes(availableSize: Int, spacing: Int): List<Int> {
+        val count = ((availableSize + spacing) / (minSize.roundToPx() + spacing)).coerceAtLeast(minColumns)
+        // Same distribution as GridCells.Fixed: the leftover pixels go one each to the first
+        // columns rather than being dropped, so the row ends exactly on the edge.
+        val forCells = availableSize - spacing * (count - 1)
+        val cell = forCells / count
+        val remainder = forCells % count
+        return List(count) { cell + if (it < remainder) 1 else 0 }
+    }
+}
 
 @Composable
 fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -168,11 +198,11 @@ private fun StationGrid(
         return
     }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 170.dp),
+        columns = AdaptiveAtLeast(minSize = TILE_MIN_WIDTH, minColumns = 2),
         modifier = modifier,
         contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
+        verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
     ) {
         items(stations, key = { it.id }) { station ->
             StationCard(
@@ -199,11 +229,11 @@ private fun ChannelGrid(
         return
     }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 170.dp),
+        columns = AdaptiveAtLeast(minSize = TILE_MIN_WIDTH, minColumns = 2),
         modifier = modifier,
         contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
+        verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
     ) {
         items(entries, key = { it.channel.id }) { entry ->
             ChannelCard(

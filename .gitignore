@@ -22,6 +22,8 @@ signing.local.properties
 *yarn.lock
 /com/
 shared/src/commonMain/composeResources/files/aboutlibraries.json
+# Generated from values-he by :shared:mirrorHebrewStringsForAndroid.
+shared/src/commonMain/composeResources/values-iw/
 hs_err_pid*.log
 replay_pid*.log
 core.*
