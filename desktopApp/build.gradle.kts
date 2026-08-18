@@ -78,6 +78,7 @@ nucleus.application {
             upgradeUuid = "3f1c9a52-84d7-4e63-9b0a-6c2f7d18e405"
         }
         macOS {
+            iconFile.set(project.file("appIcons/MacOsIcon.icns"))
             packageVersion = nativePackageVersion
             bundleID = "co.abaye.musicradio"
         }

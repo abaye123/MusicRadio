@@ -27,10 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import dev.kdroid.musicradio.App
+import dev.kdroid.musicradio.domain.AccentColor
 import dev.kdroid.musicradio.main.LocalHostHasTitleBar
 import dev.kdroid.musicradio.main.LocalWindowDrag
 import dev.kdroid.musicradio.theme.rememberRadioColorScheme
 import dev.nucleusframework.application.nucleusApplication
+import dev.nucleusframework.core.runtime.Platform
 import dev.nucleusframework.window.ControlButtonsDirection
 import dev.nucleusframework.window.DecoratedWindowScope
 import dev.nucleusframework.window.LocalWindowChromeInsets
@@ -42,8 +44,9 @@ import dev.nucleusframework.window.WindowScaffold
 import dev.nucleusframework.window.macOSLargeCornerRadius
 import dev.nucleusframework.window.material.MaterialDecoratedWindow
 import dev.nucleusframework.window.windowDragArea
-import dev.nucleusframework.core.runtime.Platform
-import dev.kdroid.musicradio.domain.AccentColor
+import musicradio.shared.generated.resources.Res
+import musicradio.shared.generated.resources.app_icon
+import org.jetbrains.compose.resources.painterResource
 
 private val CHROME_HEIGHT = 44.dp
 
@@ -70,6 +73,7 @@ fun main(args: Array<String>) {
                     height = 780.dp,
                 ),
                 title = "Music Radio",
+                icon = if (Platform.Current == Platform.Windows) painterResource(Res.drawable.app_icon) else null,
                 minimumSize = DpSize(420.dp, 560.dp),
             ) {
                 val windowScope = this
