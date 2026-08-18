@@ -53,7 +53,7 @@ jobs:
           if-no-files-found: ignore
 
   android:
-    name: Android compile
+    name: Android release build
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -73,7 +73,44 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
-      # Debug rather than release: this proves the code compiles and links without needing the
-      # signing secrets, which a pull request from a fork cannot read anyway.
-      - name: Assemble debug APK
-        run: ./gradlew :androidApp:assembleDebug --no-daemon --stacktrace
+      # Release rather than debug: it compiles the same sources and additionally runs R8, which
+      # no other build type enables. Until this ran here the shrinker was first exercised by
+      # release.yaml on a tag, so a broken keep rule was discovered by cutting a broken release.
+      #
+      # No signing secrets needed: without a keystore androidApp/build.gradle.kts leaves the APK
+      # unsigned rather than failing, so this still works on a pull request from a fork.
+      - name: Assemble release APK
+        run: ./gradlew :androidApp:assembleRelease --no-daemon --stacktrace
+
+      # A successful R8 run is not the same as a correct one: it drops whatever it cannot see a
+      # reference to, and both of these are reached dynamically rather than called. A keep rule
+      # that stops matching leaves an APK that builds, passes every other check, and then fails
+      # at runtime - blank artwork, or no HTTP engine the moment a stream is opened.
+      - name: Check R8 kept what is loaded dynamically
+        run: |
+          # Globbed, not named: with no keystore AGP writes androidApp-release-unsigned.apk,
+          # while a local build holding the release key writes androidApp-release.apk.
+          apk=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -1)
+          if [ -z "$apk" ]; then
+            echo '::error::assembleRelease produced no APK'
+            exit 1
+          fi
+          echo "checking $apk"
+          entries=$(unzip -l "$apk")
+
+          if ! grep -q 'META-INF/services/io.ktor.client.HttpClientEngineContainer' <<< "$entries"; then
+            echo '::error::R8 dropped the Ktor engine ServiceLoader entry'
+            exit 1
+          fi
+
+          # Counted against the source rather than against a floor: losing a handful of station
+          # logos is exactly what shrinkResources would do, and a "more than N" test sails past
+          # it. `|| true` because grep exits 1 on no match, which under `set -e` would kill the
+          # step before the message below explains why.
+          want=$(find shared/src/commonMain/composeResources/drawable -type f | wc -l)
+          got=$(grep -c 'assets/composeResources/.*/drawable/' <<< "$entries" || true)
+          echo "composeResources drawables: $got in the APK, $want in the source"
+          if [ "$got" -ne "$want" ]; then
+            echo "::error::shrinkResources changed the artwork count ($got in the APK, $want in the source)"
+            exit 1
+          fi
