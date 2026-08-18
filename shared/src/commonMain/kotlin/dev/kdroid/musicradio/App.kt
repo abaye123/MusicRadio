@@ -16,7 +16,7 @@ import dev.kdroid.musicradio.di.AppGraph
 import dev.kdroid.musicradio.di.createAppGraph
 import dev.kdroid.musicradio.domain.AccentColor
 import dev.kdroid.musicradio.domain.ThemeMode
-import dev.kdroid.musicradio.platform.Platform
+import dev.kdroid.musicradio.platform.ProvideAppLocale
 import dev.kdroid.musicradio.theme.RadioTheme
 
 @Composable
@@ -43,15 +43,13 @@ fun App(
     onThemeChange(isDark)
     onAccentChange(settings.accent)
     val language = settings.uiLanguage
-    remember(language) {
-        Platform.applyLocale(language.code)
-        language
-    }
     onLayoutDirectionChange(language.rtl)
     val direction = if (language.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-    RadioTheme(accent = settings.accent, isDark = isDark) {
-        CompositionLocalProvider(LocalLayoutDirection provides direction) {
-            RootScreen(state = state, backStack = vm.backStack, onIntent = vm::onIntent)
+    ProvideAppLocale(language.code) {
+        RadioTheme(accent = settings.accent, isDark = isDark) {
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                RootScreen(state = state, backStack = vm.backStack, onIntent = vm::onIntent)
+            }
         }
     }
 }

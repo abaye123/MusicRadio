@@ -15,6 +15,9 @@ import dev.kdroid.musicradio.domain.AccentColor
  *
  * Exposed on its own so the desktop window can paint its title bar with the same scheme the
  * content uses - the chrome lives outside [RadioTheme]'s composition.
+ *
+ * Typography is Material 3 default on Android and desktop. The web actual swaps in Noto Sans
+ * Hebrew so the Skiko canvas has a face for that script (the Noto downloader is Compose 1.12).
  */
 @Composable
 fun rememberRadioColorScheme(accent: AccentColor = AccentColor.Indigo, isDark: Boolean = isSystemInDarkTheme()): ColorScheme =
@@ -27,7 +30,10 @@ fun RadioTheme(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(colorScheme = rememberRadioColorScheme(accent, isDark)) {
+    MaterialTheme(
+        colorScheme = rememberRadioColorScheme(accent, isDark),
+        typography = radioTypography(),
+    ) {
         Surface(modifier = modifier, content = content)
     }
 }

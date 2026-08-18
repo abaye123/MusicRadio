@@ -11,6 +11,7 @@ import dev.kdroid.musicradio.domain.Stations
 import dev.kdroid.musicradio.domain.UserSettings
 import dev.kdroid.musicradio.domain.toggleFavorite
 import dev.kdroid.musicradio.platform.Platform
+import dev.kdroid.musicradio.platform.localizedString
 import dev.kdroid.musicradio.platform.systemUiLanguage
 import dev.kdroid.musicradio.player.IcyMetadata
 import dev.kdroid.musicradio.player.MediaCommand
@@ -39,7 +40,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 
 /** Tracks run minutes, and each poll costs a real (if small) read off the stream. */
 private const val METADATA_POLL_MS = 20_000L
@@ -123,7 +123,8 @@ class AppViewModel(
 
     private suspend fun publishNowPlaying(playback: PlaybackState) {
         val station = Stations.of(playback.stationId)
-        val stationName = station?.let { runCatching { getString(it.name) }.getOrNull() }.orEmpty()
+        val language = _state.value.data.settings.uiLanguage.code
+        val stationName = station?.let { runCatching { localizedString(language, it.name) }.getOrNull() }.orEmpty()
         val channel = Stations.channel(playback.channelId)
         val channelLabel = channel?.title ?: stationName
         // Most stations send "Artist - Track"; when they don't, the whole string is the title.

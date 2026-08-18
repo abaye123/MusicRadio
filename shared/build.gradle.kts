@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -24,6 +25,15 @@ kotlin {
 
     jvm {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    }
+
+    js {
+        browser()
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
     }
 
     sourceSets {
@@ -72,6 +82,12 @@ kotlin {
             implementation(libs.nucleus.system.color)
             implementation(libs.nucleus.media.control)
             implementation(libs.nucleus.updater.runtime)
+        }
+
+        // webMain is the Kotlin 2.4 default-hierarchy parent of jsMain and wasmJsMain.
+        webMain.dependencies {
+            implementation(libs.ktor.client.js)
+            implementation(libs.wrappers.browser)
         }
     }
 }

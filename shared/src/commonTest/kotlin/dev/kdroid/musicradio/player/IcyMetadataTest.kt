@@ -21,7 +21,7 @@ class IcyMetadataTest {
 
     @Test
     fun `keeps a title that spans lines`() {
-        // DOT_MATCHES_ALL is deliberate: at least one mount wraps long titles.
+        // `[\s\S]` is deliberate: at least one mount wraps long titles.
         assertEquals("first\nsecond", parseStreamTitle("StreamTitle='first\nsecond';"))
     }
 

@@ -8,7 +8,7 @@
 ```
 
 **Rule:** All project code - business logic, UI, navigation, data, utilities - goes in the `shared` module.
-Platform modules (`androidApp`, `desktopApp`) are thin wrappers containing only an entry point (`main()` / `Activity`).
+Platform modules (`androidApp`, `desktopApp`, `webApp`) are thin wrappers containing only an entry point (`main()` / `Activity`).
 
 ## Build & Run
 
@@ -17,6 +17,10 @@ Platform modules (`androidApp`, `desktopApp`) are thin wrappers containing only 
 | **Desktop** (run) | `./gradlew :desktopApp:run` |
 | **Desktop** (hot reload) | `./gradlew :desktopApp:hotRun --auto` |
 | **Android** (debug APK) | `./gradlew :androidApp:assembleDebug` |
+| **Web** (Wasm) | `./gradlew :webApp:wasmJsBrowserDevelopmentRun` |
+| **Web** (JS, older browsers) | `./gradlew :webApp:jsBrowserDevelopmentRun` |
+| **Web** (PWA dist) | `./gradlew :webApp:wasmJsBrowserDistribution` |
+| **GitHub Pages** | `website/` at `/`, Wasm app at `/live` (`.github/workflows/deploy-pages.yml`) |
 | **Compose stability check** | `./gradlew :shared:compileKotlinJvm :shared:stabilityCheck` |
 | **Lint** | `./gradlew detekt ktlintCheck` |
 
@@ -26,6 +30,7 @@ When checking correctness, compile in this order:
 
 1. **JVM** - fastest feedback loop
 2. **Android**
+3. **Wasm** - `:shared:compileKotlinWasmJs` then `:webApp:compileKotlinWasmJs`
 
 ## Architecture
 
@@ -37,7 +42,7 @@ every screen is a pure function of that state.
 - `player/` - `RadioPlayer`, the app's view of playback, over Compose Media Player's audio module.
 - `app/` - `AppState` / `AppIntent` / `AppViewModel` / `RootScreen`, plus Navigation 3's back stack.
 - `main/`, `ui/` - Compose screens and widgets.
-- `platform/` - `expect`/`actual` for the handful of things the JVM and Android split on.
+- `platform/` - `expect`/`actual` for the handful of things the JVM, Android and the browser split on.
 - `di/` - Metro graph.
 
 **Adding a station:** edit `domain/Stations.kt`, drop the artwork in
@@ -66,7 +71,8 @@ When searching for a Kotlin Multiplatform library to solve a task:
 1. **First, try to find a ready-made library** with KMP support.
 2. If no ready solution exists, use **`expect` / `actual`**:
    - Interfaces and `expect` declarations - in `commonMain`
-   - `actual` implementations - in `androidMain`, `jvmMain`
+   - `actual` implementations - in `androidMain`, `jvmMain`, `webMain` (js + wasmJs)
+   - Browser interop that cannot be shared goes in `jsMain` / `wasmJsMain`
 
 ## General Guidelines
 
