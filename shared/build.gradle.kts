@@ -87,6 +87,8 @@ structuredCoroutines {
 compose.resources {
     // Independent of rootProject.name - renaming the app must not move Res.
     packageOfResClass = "musicradio.shared.generated.resources"
+    // The platform modules host the windows, so they need the shared drawables too.
+    publicResClass = true
 }
 
 val stabilityConfig = rootProject.layout.projectDirectory.file("config/stability-config.conf")
