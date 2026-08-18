@@ -103,11 +103,14 @@ jobs:
             exit 1
           fi
 
-          # `|| true`: grep exits 1 on no match, which under `set -e` would kill the step
-          # before the message below explains why.
-          drawables=$(grep -c 'assets/composeResources/.*/drawable/' <<< "$entries" || true)
-          echo "composeResources drawables in the APK: $drawables"
-          if [ "$drawables" -lt 100 ]; then
-            echo "::error::shrinkResources ate the station artwork ($drawables left)"
+          # Counted against the source rather than against a floor: losing a handful of station
+          # logos is exactly what shrinkResources would do, and a "more than N" test sails past
+          # it. `|| true` because grep exits 1 on no match, which under `set -e` would kill the
+          # step before the message below explains why.
+          want=$(find shared/src/commonMain/composeResources/drawable -type f | wc -l)
+          got=$(grep -c 'assets/composeResources/.*/drawable/' <<< "$entries" || true)
+          echo "composeResources drawables: $got in the APK, $want in the source"
+          if [ "$got" -ne "$want" ]; then
+            echo "::error::shrinkResources changed the artwork count ($got in the APK, $want in the source)"
             exit 1
           fi
