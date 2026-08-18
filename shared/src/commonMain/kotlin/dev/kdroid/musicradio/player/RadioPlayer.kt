@@ -37,9 +37,13 @@ interface RadioPlayer {
      * the stream by the platform, because ICY carries no charset and the Hebrew stations that
      * send windows-1255 come out as mojibake wherever it is assumed to be UTF-8.
      *
+     * [artworkUri] is the file [mediaArtworkUri] produced. Android puts it on the MediaSession so
+     * the notification and lock screen can show the cover; desktop ignores it here and goes
+     * through [MediaControls] instead.
+     *
      * A no-op where the platform has nothing to display it on.
      */
-    fun setNowPlaying(station: String, song: String) = Unit
+    fun setNowPlaying(station: String, song: String, artworkUri: String? = null) = Unit
 }
 
 /** Stands in wherever a real audio backend cannot run - unit tests, previews. */

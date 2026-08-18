@@ -131,22 +131,23 @@ class AppViewModel(
         val separator = song.indexOf(" - ")
         val songArtist = if (separator > 0) song.take(separator).trim() else ""
         val songTitle = if (separator > 0) song.drop(separator + 3).trim() else song.trim()
+        // A channel only carries its own cover when the broadcaster publishes one;
+        // otherwise the station logo stands in, exactly as in the station list.
+        val artworkUri = mediaArtworkUri(
+            id = playback.channelId.ifEmpty { playback.stationId },
+            artwork = channel?.artwork ?: station?.artwork,
+        )
         mediaControls.update(
             NowPlaying(
                 station = stationName,
                 title = songTitle.ifBlank { channelLabel },
                 artist = songArtist.ifBlank { if (song.isBlank()) channelLabel else stationName },
-                // A channel only carries its own cover when the broadcaster publishes one;
-                // otherwise the station logo stands in, exactly as in the station list.
-                artworkUri = mediaArtworkUri(
-                    id = playback.channelId.ifEmpty { playback.stationId },
-                    artwork = channel?.artwork ?: station?.artwork,
-                ),
+                artworkUri = artworkUri,
             ),
             playback.status,
         )
         // Android reads this off the player's own session rather than through MediaControls.
-        player.setNowPlaying(station = channelLabel, song = song)
+        player.setNowPlaying(station = channelLabel, song = song, artworkUri = artworkUri)
     }
 
     /**

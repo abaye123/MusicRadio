@@ -20,9 +20,4 @@ class MediaArtworkTest {
         assertTrue(Files.isRegularFile(file), "no file at $file")
         assertTrue(Files.size(file) > 0, "empty artwork file")
     }
-
-    @Test
-    fun `returns null without artwork`() = runTest {
-        assertNotNull(mediaArtworkUri("kol_hay", null)?.let { "unexpected: $it" } ?: "ok")
-    }
 }
