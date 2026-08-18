@@ -25,7 +25,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,17 +54,16 @@ fun MainShell(
     content: @Composable () -> Unit,
 ) {
     val compact = LocalCompactLayout.current
-    val uiLanguage = state.data.settings.uiLanguage
     Column(modifier.fillMaxSize()) {
         // On desktop the brand lives in the window title bar, so it is not repeated here.
-        if (!LocalHostHasTitleBar.current) key(uiLanguage) { BrandBar() }
+        if (!LocalHostHasTitleBar.current) BrandBar()
         if (compact) {
             Box(Modifier.weight(1f).fillMaxWidth()) { content() }
             MiniPlayerBar(state, onIntent)
-            key(uiLanguage) { BottomBar(destination, onIntent) }
+            BottomBar(destination, onIntent)
         } else {
             Row(Modifier.weight(1f).fillMaxWidth()) {
-                key(uiLanguage) { NavRail(destination, onIntent) }
+                NavRail(destination, onIntent)
                 Box(Modifier.weight(1f).fillMaxHeight()) { content() }
             }
             PlayerBar(state, onIntent)

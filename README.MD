@@ -10,7 +10,7 @@ uses: one `shared` module holding all the logic and the whole UI, with paper-thi
 
 | | KdroidRadioDesktop | Music Radio |
 |---|---|---|
-| Targets | Desktop (JVM) only | Desktop **and** Android, one shared UI |
+| Targets | Desktop (JVM) only | Desktop, Android **and** the browser, one shared UI |
 | Audio | VLCJ - needs VLC installed on the machine | [Compose Media Player](https://github.com/kdroidFilter/Compose-Media-Player) audio module: Media3 on Android, Rodio on desktop. Nothing to install. |
 | Architecture | PreCompose, several view models, mutable state scattered across managers | Single-state MVI: one `AppState`, one `AppViewModel`, one `onIntent` |
 | Navigation | PreCompose router | Navigation 3 back stack |
@@ -28,6 +28,7 @@ carries 38 channels), the Hebrew / English / French interface - carries over unc
 shared/       logic, Compose UI, player, data
 desktopApp/   desktop entry point (Nucleus decorated window)
 androidApp/   Android entry point (single activity)
+webApp/       browser entry point (Compose Viewport + PWA)
 ```
 
 ## Install
@@ -44,17 +45,32 @@ The script pulls the `.zip` matching the machine's CPU from the latest release, 
 Prebuilt packages (DMG, NSIS, Deb, APK) are also on
 [GitHub Releases](https://github.com/abaye123/MusicRadio/releases).
 
+The browser build lives at
+[abaye123.github.io/MusicRadio/live](https://abaye123.github.io/MusicRadio/live/).
+A push to `main` that touches `shared/`, `webApp/` or `website/` rebuilds it
+and deploys it next to the download page.
+
 ## Running from source
 
 ```bash
-./gradlew :desktopApp:run           # desktop
-./gradlew :androidApp:assembleDebug # Android APK
+./gradlew :desktopApp:run                      # desktop
+./gradlew :androidApp:assembleDebug            # Android APK
+./gradlew :webApp:wasmJsBrowserDevelopmentRun  # browser (Wasm)
+./gradlew :webApp:jsBrowserDevelopmentRun      # browser (JS, older engines)
 ```
 
 Hot reload:
 
 ```bash
 ./gradlew :desktopApp:hotRun --auto
+```
+
+The web tasks open a local webpack-dev-server. Wasm is the one to use day to day; JS is there for browsers that still cannot run Kotlin/Wasm. Settings and favorites persist in `localStorage`.
+
+A production PWA (service worker, manifest, installable) lands under `webApp/build/dist/wasmJs/productionExecutable`:
+
+```bash
+./gradlew :webApp:wasmJsBrowserDistribution
 ```
 
 ## Building distributables

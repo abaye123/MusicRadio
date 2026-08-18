@@ -85,7 +85,9 @@ private suspend fun ByteReadChannel.skipExactly(count: Int, scratch: ByteArray):
     return true
 }
 
-private val StreamTitlePattern = Regex("StreamTitle='(.*?)';", RegexOption.DOT_MATCHES_ALL)
+// `[\s\S]` rather than `.` + DOT_MATCHES_ALL: the latter is JVM-only, and ICY titles can
+// legally span a line break even if they almost never do.
+private val StreamTitlePattern = Regex("StreamTitle='([\\s\\S]*?)';")
 
 /**
  * Placeholders some stations park in the field forever. Showing "line" or a CDN advert under the

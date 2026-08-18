@@ -16,6 +16,7 @@ plugins {
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.stability.analyzer) apply false
     alias(libs.plugins.aboutLibraries) apply false
+    alias(libs.plugins.composePwa) apply false
 }
 
 val detektVersion = libs.versions.detekt.get()
@@ -40,6 +41,9 @@ subprojects {
             "src/androidMain/kotlin",
             "src/jvmMain/kotlin",
             "src/jvmTest/kotlin",
+            "src/webMain/kotlin",
+            "src/jsMain/kotlin",
+            "src/wasmJsMain/kotlin",
             "src/main/kotlin",
             "src/test/kotlin",
         )

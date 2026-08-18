@@ -41,6 +41,28 @@ jobs:
       - name: Compile desktop
         run: ./gradlew :desktopApp:compileKotlin --no-daemon --stacktrace
 
+  web:
+    name: Web compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # Compiles the Wasm target (and the shared web actuals it pulls in) without webpack.
+      - name: Compile Wasm
+        run: ./gradlew :webApp:compileKotlinWasmJs --no-daemon --stacktrace
+
       # The HTML report says which assertion failed; the console output usually does not.
       - name: Collect test reports
         if: failure()
