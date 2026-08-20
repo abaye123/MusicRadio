@@ -41,6 +41,12 @@ data class AppState(
     val favorites: List<Station>
         get() = visibleStations(data.settings.showNews).filter { it.id in data.favorites }
 
+    /** Starred channels, in catalog order, so the favorites grid can list them under the stations. */
+    val favoriteChannels: List<ChannelEntry>
+        get() = visibleStations(data.settings.showNews)
+            .flatMap { station -> station.channels.map { ChannelEntry(station, it) } }
+            .filter { it.channel.id in data.favorites }
+
     val currentStation: Station? get() = Stations.of(playback.stationId)
 
     val currentChannel get() = Stations.channel(playback.channelId)

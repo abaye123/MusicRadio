@@ -21,7 +21,8 @@ sealed interface AppIntent {
     data class SetVolume(val percent: Int) : AppIntent
     data object ToggleMute : AppIntent
 
-    data class ToggleFavorite(val stationId: String) : AppIntent
+    /** [id] is a station id or a channel id; see `AppData.toggleFavorite`. */
+    data class ToggleFavorite(val id: String) : AppIntent
     data class SetSearchQuery(val query: String) : AppIntent
 
     /** `null` clears the filter and shows every category. */

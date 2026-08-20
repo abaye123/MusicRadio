@@ -247,7 +247,7 @@ class AppViewModel(
 
         AppIntent.OpenNowPlaying, AppIntent.Back -> s
 
-        is AppIntent.ToggleFavorite -> s.copy(data = s.data.toggleFavorite(intent.stationId))
+        is AppIntent.ToggleFavorite -> s.copy(data = s.data.toggleFavorite(intent.id))
 
         is AppIntent.SetSearchQuery -> s.copy(query = intent.query)
 

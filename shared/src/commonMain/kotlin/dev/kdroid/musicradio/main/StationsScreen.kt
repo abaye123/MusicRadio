@@ -132,15 +132,47 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
     }
 }
 
+/**
+ * Stations and channels in one grid rather than behind the stations/streams toggle the browse
+ * screen uses: you starred these individually, and splitting them across two views hides half of
+ * what you saved behind a control you have to discover.
+ */
 @Composable
 fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
-    StationGrid(
-        stations = state.favorites,
-        state = state,
-        onIntent = onIntent,
-        emptyText = stringResource(Res.string.favorites_empty),
-        modifier = modifier.fillMaxSize().padding(horizontal = 20.dp),
-    )
+    val stations = state.favorites
+    val channels = state.favoriteChannels
+    val grid = modifier.fillMaxSize().padding(horizontal = 20.dp)
+    if (stations.isEmpty() && channels.isEmpty()) {
+        EmptyGrid(stringResource(Res.string.favorites_empty), grid)
+        return
+    }
+    LazyVerticalGrid(
+        columns = AdaptiveAtLeast(minSize = TILE_MIN_WIDTH, minColumns = 2),
+        modifier = grid,
+        contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
+        verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
+    ) {
+        items(stations, key = { it.id }) { station ->
+            StationCard(
+                station = station,
+                playing = state.playback.stationId == station.id && state.playback.status.active,
+                favorite = true,
+                onClick = { onIntent(AppIntent.SelectStation(station.id)) },
+                onToggleFavorite = { onIntent(AppIntent.ToggleFavorite(station.id)) },
+            )
+        }
+        items(channels, key = { it.channel.id }) { entry ->
+            ChannelCard(
+                station = entry.station,
+                channel = entry.channel,
+                playing = state.playback.channelId == entry.channel.id && state.playback.status.active,
+                favorite = true,
+                onClick = { onIntent(AppIntent.SelectChannel(entry.channel.id)) },
+                onToggleFavorite = { onIntent(AppIntent.ToggleFavorite(entry.channel.id)) },
+            )
+        }
+    }
 }
 
 /** Icon-only so it stays out of the search field's way; the labels live in the descriptions. */
@@ -240,7 +272,9 @@ private fun ChannelGrid(
                 station = entry.station,
                 channel = entry.channel,
                 playing = state.playback.channelId == entry.channel.id && state.playback.status.active,
+                favorite = state.data.isFavorite(entry.channel.id),
                 onClick = { onIntent(AppIntent.SelectChannel(entry.channel.id)) },
+                onToggleFavorite = { onIntent(AppIntent.ToggleFavorite(entry.channel.id)) },
             )
         }
     }

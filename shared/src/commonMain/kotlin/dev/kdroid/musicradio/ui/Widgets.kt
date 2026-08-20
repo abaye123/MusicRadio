@@ -137,15 +137,17 @@ fun StationCard(
 }
 
 /**
- * One tile per individual stream. The star is absent here on purpose: favorites are kept per
- * station, so a channel-level star would silently bookmark its whole station.
+ * One tile per individual stream, starrable in its own right: a station with 83 channels is not
+ * something you want to bookmark whole just to keep one of them close.
  */
 @Composable
 fun ChannelCard(
     station: Station,
     channel: Channel,
     playing: Boolean,
+    favorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -159,6 +161,21 @@ fun ChannelCard(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
                 StationArtwork(station, Modifier.fillMaxWidth().aspectRatio(1f), channel = channel)
+                // Placed exactly as the station tile's star, so the two grids stay readable as one.
+                Surface(
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    shape = CircleShape,
+                    color = colors.scrim.copy(alpha = 0.45f),
+                ) {
+                    IconButton(onClick = onToggleFavorite, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                            stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
+                            modifier = Modifier.size(20.dp),
+                            tint = if (favorite) colors.primary else Color.White,
+                        )
+                    }
+                }
                 if (playing) {
                     Surface(
                         modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),

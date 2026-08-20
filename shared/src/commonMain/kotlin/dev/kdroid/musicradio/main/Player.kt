@@ -107,6 +107,10 @@ fun PlayerBar(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 NowPlayingLabel(state, station, Modifier.weight(1f))
+                // The desktop bar is the only player surface on a wide window, so without this
+                // there is no way to bookmark what is playing: the grid tile that carries the
+                // other star is not on screen once you are inside a station's channels.
+                FavoriteButton(state, onIntent)
                 ChannelPicker(state, onIntent)
                 TransportControls(state, onIntent, big = false)
                 VolumeControl(state, onIntent, Modifier.weight(1f))
@@ -192,8 +196,13 @@ fun MiniPlayerBar(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modi
 @Composable
 private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size: Dp = 24.dp) {
     val station = state.currentStation ?: return
-    val favorite = state.data.isFavorite(station.id)
-    IconButton(onClick = { onIntent(AppIntent.ToggleFavorite(station.id)) }) {
+    // On a multi-channel station the star follows the channel you are actually on; bookmarking the
+    // whole of Kol Chai Music because you liked one of its 83 streams is not what the press means.
+    // A single-channel station has nothing finer to point at, so it stays the station itself, and
+    // favorites saved before channels were starrable keep matching.
+    val target = state.currentChannel?.id?.takeIf { station.multiChannel } ?: station.id
+    val favorite = state.data.isFavorite(target)
+    IconButton(onClick = { onIntent(AppIntent.ToggleFavorite(target)) }) {
         Icon(
             if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
             stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
