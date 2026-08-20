@@ -18,6 +18,7 @@
     <string name="player_mute">Mute</string>
     <string name="player_unmute">Unmute</string>
     <string name="player_volume">Volume</string>
+    <string name="player_back">Back</string>
     <string name="player_channel">Channel</string>
     <string name="player_nothing">Pick a station to start listening</string>
     <string name="player_buffering">Buffering…</string>

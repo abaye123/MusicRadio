@@ -18,6 +18,7 @@
     <string name="player_mute">השתק</string>
     <string name="player_unmute">בטל השתקה</string>
     <string name="player_volume">עוצמה</string>
+    <string name="player_back">חזרה</string>
     <string name="player_channel">ערוץ</string>
     <string name="player_nothing">בחרו תחנה כדי להתחיל להאזין</string>
     <string name="player_buffering">טוען…</string>
