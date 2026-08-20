@@ -199,17 +199,24 @@ data class Station(
 object Stations {
 
     val all: List<Station> = listOf(
-        // media2.93fm.co.il only 302s to live.kcm.fm; pointing straight there saves a redirect hop.
         Station(
             id = "beshiour_hay",
             name = Res.string.station_beshiour_hay,
             artwork = Res.drawable.station_beshiour_hay,
             category = StationCategory.Torah,
             channels = listOf(
-                Channel("beshiour_hay/main", "https://live.kcm.fm/livetorani"),
                 // One channel per magid shiur, from the broadcaster's own feed
-                // (emess.co.il/Home/LiveJ, cat 5). No per-channel cover is published for
-                // them, so they fall back to the station logo.
+                // (kcm.fm/Home/LiveJ, cat 5). No per-channel cover is published for them, so
+                // they fall back to the station logo.
+                //
+                // The single stream this station used to carry, live.kcm.fm/livetorani, is gone:
+                // it 404s in every form the feed still advertises, and the feed's own
+                // playing_date for it stopped at 2024-06-16 while every channel below updates by
+                // the minute. The lecture channels replaced it.
+                //
+                // Keyed by mount, never by the feed's item id - the two diverge from 103 up, and
+                // one hidden entry (visible=2, "מרן רבנו עובדיה יוסף") points at mount 105, which
+                // the visible "הרב שניר גואטה" already owns.
                 Channel("beshiour_hay/89", "https://live.kcm.fm/89", "הרב אברהם יוסף"),
                 Channel("beshiour_hay/92", "https://live.kcm.fm/92", "הרב בן ציון מוצפי"),
                 Channel("beshiour_hay/93", "https://live.kcm.fm/93", "הרב ברוך רוזנבלום"),
