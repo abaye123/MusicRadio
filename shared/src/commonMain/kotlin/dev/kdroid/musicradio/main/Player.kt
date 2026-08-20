@@ -3,6 +3,7 @@ package dev.kdroid.musicradio.main
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,6 +62,7 @@ import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.ui.StationArtwork
 import musicradio.shared.generated.resources.Res
 import musicradio.shared.generated.resources.favorite_add
+import musicradio.shared.generated.resources.player_back
 import musicradio.shared.generated.resources.favorite_remove
 import musicradio.shared.generated.resources.player_buffering
 import musicradio.shared.generated.resources.player_live
@@ -204,47 +207,92 @@ private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size:
 }
 
 /** Compact host: the player as a full screen of its own. */
+/**
+ * The compact player, and the only screen that is not inside [MainShell] - there is no bottom bar
+ * behind it, so it carries its own way back.
+ *
+ * Sized off the height rather than the width. The artwork used to be 80% of the width with a square
+ * ratio, which on a short screen is taller than everything else put together: the transport row and
+ * the volume slider were pushed past the bottom edge with nothing to scroll, so on a phone like the
+ * F21 the play button simply was not there. The artwork is now capped by whichever of the two
+ * dimensions runs out first, and the controls step down a size once the window is short.
+ */
 @Composable
 fun NowPlayingScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
-    val station = state.currentStation
-    Column(
-        modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (station == null) {
-            Text(stringResource(Res.string.player_nothing), style = MaterialTheme.typography.bodyLarge)
-            return@Column
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val short = maxHeight < ShortWindowHeight
+        val gap = if (short) 8.dp else 20.dp
+        val artworkMax = maxWidth * 0.8f
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = if (short) 8.dp else 16.dp)) {
+            IconButton(onClick = { onIntent(AppIntent.Back) }, modifier = Modifier.align(Alignment.Start)) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(Res.string.player_back))
+            }
+            val station = state.currentStation
+            Column(
+                Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(gap, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (station == null) {
+                    Text(stringResource(Res.string.player_nothing), style = MaterialTheme.typography.bodyLarge)
+                    return@Column
+                }
+                // The artwork is the only thing here that can give: weight(fill = false) hands it
+                // whatever is left once the rows below have taken their natural height, so the
+                // transport row keeps its real size instead of being squeezed - it used to be
+                // compressed to nothing on a short window, which is how the play button vanished.
+                StationArtwork(
+                    station,
+                    Modifier.weight(1f, fill = false).widthIn(max = artworkMax).aspectRatio(1f),
+                    RoundedCornerShape(28.dp),
+                    state.currentChannel,
+                )
+                Text(
+                    stringResource(station.name),
+                    style = if (short) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val song = state.playback.nowPlaying
+                if (song.isNotBlank()) {
+                    Text(
+                        song,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = if (short) 1 else 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                // The status line is the first thing to go: it repeats what the play button already
+                // shows, and on a short window that row is worth more than the word "Live".
+                if (!short) {
+                    Text(
+                        statusLabel(state.playback.status),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FavoriteButton(state, onIntent, size = 28.dp)
+                    ChannelPicker(state, onIntent)
+                }
+                TransportControls(state, onIntent, big = !short)
+                VolumeControl(state, onIntent, Modifier.fillMaxWidth(), Alignment.CenterHorizontally)
+            }
         }
-        StationArtwork(station, Modifier.fillMaxWidth(0.8f).aspectRatio(1f), RoundedCornerShape(28.dp), state.currentChannel)
-        Text(stringResource(station.name), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        val song = state.playback.nowPlaying
-        if (song.isNotBlank()) {
-            Text(
-                song,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Text(
-            statusLabel(state.playback.status),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FavoriteButton(state, onIntent, size = 28.dp)
-            ChannelPicker(state, onIntent)
-        }
-        TransportControls(state, onIntent, big = true)
-        VolumeControl(state, onIntent, Modifier.fillMaxWidth())
     }
 }
+
+/**
+ * Below this the compact player switches to its tighter sizes. A 16:9 phone in portrait clears it
+ * comfortably; the ones that do not are the short-and-wide ones, and landscape.
+ */
+private val ShortWindowHeight = 600.dp
 
 @Composable
 fun ChannelPicker(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -323,13 +371,24 @@ private fun PlayButton(status: PlaybackStatus, size: androidx.compose.ui.unit.Dp
     }
 }
 
+/**
+ * [alignment] is trailing-edge for the desktop bar, where the row is the last thing in a wide strip
+ * and belongs against the window edge. The compact player passes centre: there the row is given the
+ * full width under a centred column, so hugging the edge left the slider visibly off-axis from
+ * everything above it.
+ */
 @Composable
-fun VolumeControl(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
+fun VolumeControl(
+    state: AppState,
+    onIntent: (AppIntent) -> Unit,
+    modifier: Modifier = Modifier,
+    alignment: Alignment.Horizontal = Alignment.End,
+) {
     val settings = state.data.settings
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, alignment),
     ) {
         IconButton(onClick = { onIntent(AppIntent.ToggleMute) }) {
             Icon(

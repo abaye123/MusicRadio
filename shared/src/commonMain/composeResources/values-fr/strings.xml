@@ -18,6 +18,7 @@
     <string name="player_mute">Couper le son</string>
     <string name="player_unmute">Rétablir le son</string>
     <string name="player_volume">Volume</string>
+    <string name="player_back">Retour</string>
     <string name="player_channel">Canal</string>
     <string name="player_nothing">Choisissez une station pour commencer</string>
     <string name="player_buffering">Mise en mémoire tampon…</string>
