@@ -61,7 +61,13 @@ data class AppData(
     val lastChannel: String = "",
 )
 
-fun AppData.isFavorite(stationId: String): Boolean = stationId in favorites
+/**
+ * [id] is a station id or a channel id - the set holds both, and they cannot collide because a
+ * channel id is always `station/channel` while a station id never carries a slash. Storing them
+ * together is what lets an existing snapshot keep working: station favorites saved before channels
+ * were starrable read back unchanged.
+ */
+fun AppData.isFavorite(id: String): Boolean = id in favorites
 
-fun AppData.toggleFavorite(stationId: String): AppData =
-    copy(favorites = if (stationId in favorites) favorites - stationId else favorites + stationId)
+fun AppData.toggleFavorite(id: String): AppData =
+    copy(favorites = if (id in favorites) favorites - id else favorites + id)
