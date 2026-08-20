@@ -200,7 +200,31 @@ object Stations {
 
     val all: List<Station> = listOf(
         // media2.93fm.co.il only 302s to live.kcm.fm; pointing straight there saves a redirect hop.
-        single("beshiour_hay", Res.string.station_beshiour_hay, Res.drawable.station_beshiour_hay, StationCategory.Torah, "https://live.kcm.fm/livetorani"),
+        Station(
+            id = "beshiour_hay",
+            name = Res.string.station_beshiour_hay,
+            artwork = Res.drawable.station_beshiour_hay,
+            category = StationCategory.Torah,
+            channels = listOf(
+                Channel("beshiour_hay/main", "https://live.kcm.fm/livetorani"),
+                // One channel per magid shiur, from the broadcaster's own feed
+                // (emess.co.il/Home/LiveJ, cat 5). No per-channel cover is published for
+                // them, so they fall back to the station logo.
+                Channel("beshiour_hay/89", "https://live.kcm.fm/89", "הרב אברהם יוסף"),
+                Channel("beshiour_hay/92", "https://live.kcm.fm/92", "הרב בן ציון מוצפי"),
+                Channel("beshiour_hay/93", "https://live.kcm.fm/93", "הרב ברוך רוזנבלום"),
+                Channel("beshiour_hay/94", "https://live.kcm.fm/94", "הרב זמיר כהן"),
+                Channel("beshiour_hay/95", "https://live.kcm.fm/95", "הרב חיים זאיד"),
+                Channel("beshiour_hay/96", "https://live.kcm.fm/96", "הרב יגאל כהן"),
+                Channel("beshiour_hay/97", "https://live.kcm.fm/97", "הרב יוסף בן פורת"),
+                Channel("beshiour_hay/98", "https://live.kcm.fm/98", "הרב יצחק פנגר"),
+                Channel("beshiour_hay/99", "https://live.kcm.fm/99", "הרב מרדכי נויגרשל"),
+                Channel("beshiour_hay/101", "https://live.kcm.fm/101", "הרב ניסים יגן זצ\"ל"),
+                Channel("beshiour_hay/102", "https://live.kcm.fm/102", "הרב ראובן אלבז"),
+                Channel("beshiour_hay/104", "https://live.kcm.fm/104", "הרב שלמה לוינשטיין"),
+                Channel("beshiour_hay/105", "https://live.kcm.fm/105", "הרב שניר גואטה"),
+            ),
+        ),
         single(
             "kol_hahalakha",
             Res.string.station_kol_hahalakha,
