@@ -308,7 +308,10 @@ class AppViewModel(
         when (intent) {
             is AppIntent.Navigate -> setMain(intent.destination)
             AppIntent.OpenNowPlaying -> if (backStack.lastOrNull() != AppKey.NowPlaying) backStack.add(AppKey.NowPlaying)
-            AppIntent.Back -> if (backStack.size > 1) backStack.removeLast()
+            // removeAt, not removeLast(): Kotlin resolves removeLast() to the java.util.List
+            // method added in Java 21, which only exists from API 35. On Android 14 and below the
+            // call throws NoSuchMethodError, so every press of Back crashed the app there.
+            AppIntent.Back -> if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
             else -> Unit
         }
     }
