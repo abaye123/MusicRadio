@@ -1,6 +1,8 @@
 import dev.nucleusframework.desktop.application.dsl.CompressionLevel
 import dev.nucleusframework.desktop.application.dsl.NativeImageMarch
 import dev.nucleusframework.desktop.application.dsl.NativeImageOptimization
+import dev.nucleusframework.desktop.application.dsl.ReleaseChannel
+import dev.nucleusframework.desktop.application.dsl.ReleaseType
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -66,11 +68,33 @@ nucleus.application {
         // electron-builder refuses to build a .deb without it: "Please specify project homepage".
         homepage = "https://github.com/abaye123/MusicRadio"
 
+        // Where the app looks for its own updates. GitHubProvider in DesktopUpdate.kt reads the
+        // same coordinates; both have to name the repository the release workflow publishes to.
+        publish {
+            github {
+                enabled = true
+                owner = "abaye123"
+                repo = "MusicRadio"
+                channel = ReleaseChannel.Latest
+                releaseType = ReleaseType.Release
+            }
+        }
+
         linux {
             iconFile.set(project.file("appIcons/LinuxIcon.png"))
             debPackageVersion = releaseVersion
             // Likewise mandatory for .deb; the address only has to be well-formed.
             debMaintainer = "abaye <abaye123@users.noreply.github.com>"
+
+            // A .deb can only install itself without a password prompt if it is signed, so this is
+            // what makes the Linux self-update silent rather than a sudo dialog. Inert until the
+            // LINUX_GPG_* secrets exist: the CI step below writes the key settings into
+            // gradle.properties only when the secret is present, and this block reads them from
+            // there. Windows and macOS need none of it.
+            signing {
+                enabled.set(true)
+                silentUpdate.set(true)
+            }
         }
         windows {
             iconFile.set(project.file("appIcons/WindowsIcon.ico"))
