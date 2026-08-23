@@ -12,7 +12,12 @@ import dev.kdroid.musicradio.domain.ShiurFolder
 import dev.kdroid.musicradio.domain.ShiurItem
 import dev.kdroid.musicradio.domain.ShiurLanguage
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import dev.kdroid.kolhalashon.ShiurLanguage as WireLanguage
 
 /**
@@ -22,40 +27,51 @@ import dev.kdroid.kolhalashon.ShiurLanguage as WireLanguage
  */
 private const val MIN_REQUEST_INTERVAL_MS = 1_000L
 
-actual fun createShiurCatalog(http: HttpClient): ShiurCatalog? = KolHalashonCatalog(http)
+/**
+ * No clearance provider, no catalogue.
+ *
+ * The site's API sits behind a bot check that turns away any plain HTTP client on its very first
+ * request - not after a burst, and regardless of host, method or headers. The only thing that gets
+ * through it is a real browser session, so a platform with no browser engine to drive has no way to
+ * read this API and says so by shipping no catalogue at all, rather than a rav card that fails on
+ * every tap.
+ */
+actual fun createShiurCatalog(http: HttpClient): ShiurCatalog? {
+    val clearance = createClearanceProvider() ?: return null
+    return KolHalashonCatalog(http, clearance)
+}
 
-private class KolHalashonCatalog(http: HttpClient) : ShiurCatalog {
+private class KolHalashonCatalog(
+    private val http: HttpClient,
+    private val clearanceProvider: ClearanceProvider,
+) : ShiurCatalog {
 
-    private val client = KolHalashonClient(
-        options = KolHalashonOptions(
-            // www, not srv: that is the host a real browser talks to, and the one least likely to
-            // be treated as automation.
-            baseUrl = KolHalashonUrls.SITE_API_BASE_URL,
-            minRequestIntervalMillis = MIN_REQUEST_INTERVAL_MS,
-            maxConcurrency = 1,
-        ),
-        // Borrowed, so the app keeps one connection pool and the platform's certificate handling -
-        // which on Android and on a filtered desktop line is not something to set up twice.
-        httpClient = http,
-    )
+    private val gate = Mutex()
 
-    override suspend fun shiurim(ravId: Int, language: ShiurLanguage, fromRow: Int, rowsPerPage: Int): CatalogResult<ShiurPage> = guard {
+    /**
+     * The cookie header to send, re-read on every request.
+     *
+     * Held in a field rather than baked into the client so a refresh costs an assignment. The
+     * user-agent cannot be treated the same way - the library sends it per request from its own
+     * options, and it has to match the browser that earned the cookie - but a given device's
+     * WebView reports the same user-agent every time, so the client is still built only once.
+     */
+    private var cookieHeader: String = ""
+    private var client: KolHalashonClient? = null
+
+    override suspend fun shiurim(
+        ravId: Int,
+        language: ShiurLanguage,
+        fromRow: Int,
+        rowsPerPage: Int,
+    ): CatalogResult<ShiurPage> = guard { client ->
         val page = client.ravShiurim(
-            ShiurQuery(
-                ravId = ravId,
-                fromRow = fromRow,
-                rowsPerPage = rowsPerPage,
-                language = language.wire(),
-            ),
+            ShiurQuery(ravId = ravId, fromRow = fromRow, rowsPerPage = rowsPerPage, language = language.wire()),
         )
-        ShiurPage(
-            items = page.items.toItems(ravId),
-            fromRow = fromRow,
-            hasMore = page.hasMore,
-        )
+        ShiurPage(items = page.items.toItems(ravId), fromRow = fromRow, hasMore = page.hasMore)
     }
 
-    override suspend fun folders(ravId: Int): CatalogResult<List<ShiurFolder>> = guard {
+    override suspend fun folders(ravId: Int): CatalogResult<List<ShiurFolder>> = guard { client ->
         client.ravFolders(ravId).mapNotNull { it.toFolder(ravId) }
     }
 
@@ -65,32 +81,73 @@ private class KolHalashonCatalog(http: HttpClient) : ShiurCatalog {
         language: ShiurLanguage,
         fromRow: Int,
         rowsPerPage: Int,
-    ): CatalogResult<ShiurPage> = guard {
+    ): CatalogResult<ShiurPage> = guard { client ->
         val page = client.shiurimUnderFolder(
             folderId = folderId,
             fromRow = fromRow,
             rowsPerPage = rowsPerPage,
             language = language.wire(),
         )
-        ShiurPage(
-            items = page.items.toItems(ravId),
-            fromRow = fromRow,
-            hasMore = page.hasMore,
-        )
+        ShiurPage(items = page.items.toItems(ravId), fromRow = fromRow, hasMore = page.hasMore)
     }
 
     /**
-     * A rate limit is kept as its own case all the way to the screen. Everything else collapses to
-     * a message, because there is nothing the user can do differently about any of it.
+     * One call, with one retry behind a fresh clearance.
+     *
+     * A challenge is the only reliable sign that clearance has expired - it carries no expiry the
+     * client can read - so the first one is treated as "go and get another", and only a second
+     * challenge is reported as such. Everything else collapses to a message, because there is
+     * nothing the user can do differently about any of it.
      */
-    private inline fun <T> guard(block: () -> T): CatalogResult<T> = try {
-        CatalogResult.Ok(block())
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (_: KolHalashonRateLimitedError) {
-        CatalogResult.RateLimited
-    } catch (failure: KolHalashonError) {
-        CatalogResult.Failed(failure.message)
+    private suspend fun <T> guard(block: suspend (KolHalashonClient) -> T): CatalogResult<T> {
+        var refresh = false
+        repeat(ATTEMPTS) { attempt ->
+            val client = client(refresh) ?: return CatalogResult.Failed(null)
+            try {
+                return CatalogResult.Ok(block(client))
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: KolHalashonRateLimitedError) {
+                if (attempt == ATTEMPTS - 1) return CatalogResult.RateLimited
+                refresh = true
+            } catch (failure: KolHalashonError) {
+                return CatalogResult.Failed(failure.message)
+            }
+        }
+        return CatalogResult.RateLimited
+    }
+
+    private suspend fun client(refresh: Boolean): KolHalashonClient? = gate.withLock {
+        val clearance = clearanceProvider.clearance(refresh) ?: return null
+        cookieHeader = clearance.cookieHeader
+        client?.let { return it }
+        val built = KolHalashonClient(
+            options = KolHalashonOptions(
+                // www, not srv: that is the host a real browser talks to, and the host the
+                // clearance was earned on - a cookie does not travel between them.
+                baseUrl = KolHalashonUrls.SITE_API_BASE_URL,
+                // Must be the string the browser sent. Cloudflare binds clearance to the
+                // user-agent as well as the address, and a mismatch is rejected exactly as a
+                // missing cookie would be.
+                userAgent = clearance.userAgent,
+                minRequestIntervalMillis = MIN_REQUEST_INTERVAL_MS,
+                maxConcurrency = 1,
+            ),
+            // Derived from the app's client, so the engine and its connection pool are shared and
+            // the platform's certificate handling is not set up twice.
+            httpClient = http.config {
+                defaultRequest {
+                    // Read per request, so a refresh is an assignment rather than a rebuild.
+                    if (cookieHeader.isNotEmpty()) header(HttpHeaders.Cookie, cookieHeader)
+                }
+            },
+        )
+        client = built
+        return built
+    }
+
+    private companion object {
+        const val ATTEMPTS = 2
     }
 }
 
