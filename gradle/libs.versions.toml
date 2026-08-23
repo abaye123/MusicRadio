@@ -91,7 +91,7 @@ structured-coroutines-annotations = { module = "io.github.santimattius:structure
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 ktlint-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
-kolhalashon-client = { module = "com.github.abaye123:kolhalashon-kmp", version.ref = "kolhalashon" }
+kolhalashon-client = { module = "com.github.abaye123.kolhalashon-kmp:kolhalashon", version.ref = "kolhalashon" }
 
 [plugins]
 

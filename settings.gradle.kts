@@ -31,7 +31,7 @@ dependencyResolutionManagement {
         // Only kolhalashon-kmp comes from here. Scoped so a JitPack outage or a typo in any other
         // coordinate cannot silently resolve against it.
         maven("https://jitpack.io") {
-            content { includeGroup("com.github.abaye123") }
+            content { includeGroup("com.github.abaye123.kolhalashon-kmp") }
         }
     }
 }
@@ -50,7 +50,7 @@ dependencyResolutionManagement {
 if (providers.gradleProperty("kolhalashon.local").orNull == "true") {
     includeBuild("../../kolhalashon-api/kolhalashon-kmp") {
         dependencySubstitution {
-            substitute(module("com.github.abaye123:kolhalashon-kmp")).using(project(":"))
+            substitute(module("com.github.abaye123.kolhalashon-kmp:kolhalashon")).using(project(":"))
         }
     }
 }
