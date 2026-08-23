@@ -229,7 +229,7 @@ object Stations {
                 Channel("beshiour_hay/101", "https://live.kcm.fm/101", "הרב ניסים יגן זצ\"ל"),
                 Channel("beshiour_hay/102", "https://live.kcm.fm/102", "הרב ראובן אלבז"),
                 Channel("beshiour_hay/104", "https://live.kcm.fm/104", "הרב שלמה לוינשטיין"),
-                Channel("beshiour_hay/105", "https://live.kcm.fm/105", "הרב שניר גואטה"),
+                Channel("beshiour_hay/105", "https://live.kcm.fm/105", "מרן הרב עובדיה זצ\"ל"),
             ),
         ),
         single(
