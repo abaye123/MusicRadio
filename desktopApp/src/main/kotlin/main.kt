@@ -28,8 +28,12 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import dev.kdroid.musicradio.App
 import dev.kdroid.musicradio.domain.AccentColor
+import dev.kdroid.musicradio.main.DesktopUpdate
 import dev.kdroid.musicradio.main.LocalHostHasTitleBar
 import dev.kdroid.musicradio.main.LocalWindowDrag
+import dev.kdroid.musicradio.main.UpdateButton
+import dev.kdroid.musicradio.main.UpdateRestartDialog
+import dev.kdroid.musicradio.main.rememberDesktopUpdate
 import dev.kdroid.musicradio.theme.rememberRadioColorScheme
 import dev.nucleusframework.application.nucleusApplication
 import dev.nucleusframework.core.runtime.Platform
@@ -62,7 +66,13 @@ fun main(args: Array<String>) {
         var rtl by remember { mutableStateOf(false) }
         var accent by remember { mutableStateOf(AccentColor.Indigo) }
         val colors = rememberRadioColorScheme(accent, dark)
-        val quit = { exitApplication() }
+        val update = rememberDesktopUpdate()
+        // The quiet path: a downloaded installer runs on the way out, so most people never see
+        // the dialog at all - the app is simply newer the next time they open it.
+        val quit = {
+            update.installOnExit()
+            exitApplication()
+        }
 
         MaterialTheme(colorScheme = colors) {
             MaterialDecoratedWindow(
@@ -87,7 +97,7 @@ fun main(args: Array<String>) {
                     modifier = Modifier.macOSLargeCornerRadius(),
                     controlButtonsDirection = if (rtl) ControlButtonsDirection.Rtl else ControlButtonsDirection.Ltr,
                     titleBar = {
-                        CompositionLocalProvider(LocalLayoutDirection provides direction) { windowScope.AppChrome() }
+                        CompositionLocalProvider(LocalLayoutDirection provides direction) { windowScope.AppChrome(update) }
                     },
                 ) {
                     Box(Modifier.fillMaxSize()) {
@@ -106,6 +116,9 @@ fun main(args: Array<String>) {
                                 onQuit = quit,
                             )
                         }
+                        // Outside the density and drag providers above: this is the host's own
+                        // dialog, not part of the shared UI, and App knows nothing about it.
+                        UpdateRestartDialog(update)
                     }
                 }
             }
@@ -118,7 +131,7 @@ fun main(args: Array<String>) {
  * strip is the drag surface - `WindowScaffold` makes nothing implicit.
  */
 @Composable
-private fun DecoratedWindowScope.AppChrome() {
+private fun DecoratedWindowScope.AppChrome(update: DesktopUpdate) {
     val colors = MaterialTheme.colorScheme
     val insets = LocalWindowChromeInsets.current
 
@@ -153,6 +166,7 @@ private fun DecoratedWindowScope.AppChrome() {
             Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            UpdateButton(update)
             if (!mac) WindowControls(Modifier.fillMaxHeight())
         }
     }

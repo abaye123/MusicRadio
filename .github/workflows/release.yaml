@@ -26,19 +26,24 @@ jobs:
         include:
           - name: Windows x64
             os: windows-latest
+            arch: amd64
             tasks: :desktopApp:packageGraalvmNsis
           - name: Linux x64
             os: ubuntu-latest
+            arch: amd64
             tasks: :desktopApp:packageGraalvmDeb
           - name: Linux ARM64
             os: ubuntu-24.04-arm
+            arch: arm64
             tasks: :desktopApp:packageGraalvmDeb
           # Zip is the silent macOS updater payload; the .dmg stays the first-install image.
           - name: macOS ARM64
             os: macos-latest
+            arch: arm64
             tasks: :desktopApp:packageGraalvmDmg :desktopApp:packageGraalvmZip
           - name: macOS Intel
             os: macos-15-intel
+            arch: amd64
             tasks: :desktopApp:packageGraalvmDmg :desktopApp:packageGraalvmZip
 
     env:
@@ -75,6 +80,34 @@ jobs:
           setup-gradle: 'true'
           setup-node: 'true'
 
+      # A .deb installs itself without a sudo prompt only if it is signed, which is what makes the
+      # Linux self-update silent. Absent the secret the build still produces a working .deb, so a
+      # fork can cut a release without holding the key - it just will not update silently.
+      - name: Configure Linux package signing
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
+          LINUX_GPG_KEY_ID: ${{ secrets.LINUX_GPG_KEY_ID }}
+          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LINUX_GPG_PRIVATE_KEY:-}" ]; then
+            echo "No LINUX_GPG_PRIVATE_KEY secret; the .deb will be unsigned and will not self-update silently."
+            exit 0
+          fi
+          key="$RUNNER_TEMP/musicradio-signing-key.asc"
+          printf '%s' "$LINUX_GPG_PRIVATE_KEY" > "$key"
+          # desktopApp/build.gradle.kts declares signing { }; these properties supply the key it
+          # signs with. Written to gradle.properties because that is where the plugin reads them.
+          {
+            echo "compose.desktop.linux.sign=true"
+            echo "compose.desktop.linux.signing.keyId=$LINUX_GPG_KEY_ID"
+            echo "compose.desktop.linux.signing.keyFile=$key"
+            echo "compose.desktop.linux.signing.passphrase=$LINUX_GPG_PASSPHRASE"
+            echo "compose.desktop.linux.signing.silentUpdate=true"
+          } >> gradle.properties
+
       - name: Build native installer
         shell: bash
         # GraalVM CE is resolved through the GitHub releases API. Hosted runners share an IP,
@@ -101,15 +134,26 @@ jobs:
       - name: Collect installers
         uses: actions/upload-artifact@v5
         with:
-          name: desktop-${{ matrix.os }}
+          # generate-update-yml reads the platform out of this name and matches on Linux/Windows/
+          # macOS, so it has to be runner.os and not matrix.os - "ubuntu-latest" matches nothing.
+          # The release-assets- prefix is what the action globs for.
+          name: release-assets-${{ runner.os }}-${{ matrix.arch }}
           # Installers only, scoped to the graalvm-* output directories: those also hold the
           # electron-builder scratch files (package.json, linux-icons/*.png) and the bare native
           # binary, none of which belong in a release.
+          #
+          # .blockmap rides along now that the updater is wired in: it is electron-builder's index
+          # of which parts of an installer changed, and it is what lets an update download a few
+          # hundred KB instead of the whole package. .asc is the .deb's detached signature.
           path: |
             desktopApp/build/compose/binaries/**/graalvm-nsis/*.exe
+            desktopApp/build/compose/binaries/**/graalvm-nsis/*.blockmap
             desktopApp/build/compose/binaries/**/graalvm-deb/*.deb
+            desktopApp/build/compose/binaries/**/graalvm-deb/*.asc
             desktopApp/build/compose/binaries/**/graalvm-dmg/*.dmg
+            desktopApp/build/compose/binaries/**/graalvm-dmg/*.blockmap
             desktopApp/build/compose/binaries/**/graalvm-zip/*.zip
+            desktopApp/build/compose/binaries/**/graalvm-zip/*.blockmap
           if-no-files-found: error
 
   android:
@@ -216,6 +260,36 @@ jobs:
         with:
           path: artifacts
 
+      # The updater reads a version and a channel out of the tag, and the YML it later downloads
+      # has to be named for the same channel or a stable build would go looking for beta.yml.
+      - name: Resolve version and channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          case "$version" in
+            *-alpha*) channel=alpha ;;
+            *-beta*|*-rc*) channel=beta ;;
+            *) channel=latest ;;
+          esac
+          {
+            echo "VERSION=$version"
+            echo "CHANNEL=$channel"
+          } >> "$GITHUB_ENV"
+
+      # Writes latest.yml, latest-mac.yml and latest-linux.yml: the manifests GitHubProvider
+      # fetches to learn what the newest version is, how big each installer is and what its
+      # SHA-512 should be. Without these the app has nothing to compare itself against and every
+      # update check comes back empty. It reads the platform out of the release-assets-* directory
+      # names the desktop job produced, and skips the android artifact on its own.
+      - name: Generate update manifests
+        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v2.4.3
+        with:
+          artifacts-path: artifacts
+          version: ${{ env.VERSION }}
+          channel: ${{ env.CHANNEL }}
+
       - name: Flatten and list
         shell: bash
         run: |
@@ -224,11 +298,14 @@ jobs:
           # Deliberately narrower than what the jobs uploaded:
           #   .aab      is a Play upload format; downloading one gets you a file you cannot
           #             install, so it stays a workflow artifact and never reaches the release.
-          #   .blockmap is electron-builder's differential-update index, and nothing in the app
-          #             consumes it yet. Add it back the day an auto-updater is wired in.
           #   .zip      is macOS only and rides along for the updater, which cannot consume a .dmg.
+          #   .yml      is the update manifest generated just above.
+          #   .blockmap lets an update download only the changed blocks of an installer. The
+          #             updater falls back to the whole file if it is missing, so this is a size
+          #             optimisation rather than a requirement - but it is a large one.
           find artifacts -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.dmg' \
-            -o -name '*.zip' -o -name '*.apk' \) \
+            -o -name '*.zip' -o -name '*.apk' -o -name '*.asc' \
+            -o -name '*.yml' -o -name '*.blockmap' \) \
             -exec cp {} release/ \;
           ls -la release
           # Every platform failing would otherwise produce an empty, confusing release page.

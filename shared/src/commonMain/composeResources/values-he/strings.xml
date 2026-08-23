@@ -89,4 +89,8 @@
     <string name="station_toker_fm">טוקר FM</string>
     <string name="station_chabad_org">Chabad.org ניגוני חב״ד</string>
     <string name="station_lakewood_scoop">The Lakewood Scoop</string>
+    <string name="update_available">גרסה חדשה מוכנה להתקנה</string>
+    <string name="update_restart_title">הפעלה מחדש לעדכון</string>
+    <string name="update_restart_body">העדכון ירד למחשב. מיוזיק רדיו יופעל מחדש כדי להתקין אותו, וההשמעה תיפסק לרגע. אפשר גם פשוט לסגור את התוכנה - העדכון יותקן ביציאה.</string>
+    <string name="update_restart_now">להפעיל מחדש</string>
 </resources>

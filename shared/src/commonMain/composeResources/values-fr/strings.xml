@@ -89,4 +89,8 @@
     <string name="station_toker_fm">Toker FM</string>
     <string name="station_chabad_org">Mélodies Chabad.org</string>
     <string name="station_lakewood_scoop">The Lakewood Scoop</string>
+    <string name="update_available">Une nouvelle version est prête à installer</string>
+    <string name="update_restart_title">Redémarrer pour mettre à jour</string>
+    <string name="update_restart_body">La mise à jour a été téléchargée. Music Radio va redémarrer pour l'installer, et la lecture s'interrompra un instant. Vous pouvez aussi simplement fermer l'application : elle s'installe à la fermeture.</string>
+    <string name="update_restart_now">Redémarrer</string>
 </resources>
