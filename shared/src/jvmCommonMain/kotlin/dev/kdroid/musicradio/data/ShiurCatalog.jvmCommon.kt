@@ -41,10 +41,7 @@ actual fun createShiurCatalog(http: HttpClient): ShiurCatalog? {
     return KolHalashonCatalog(http, clearance)
 }
 
-private class KolHalashonCatalog(
-    private val http: HttpClient,
-    private val clearanceProvider: ClearanceProvider,
-) : ShiurCatalog {
+private class KolHalashonCatalog(private val http: HttpClient, private val clearanceProvider: ClearanceProvider) : ShiurCatalog {
 
     private val gate = Mutex()
 
@@ -59,17 +56,13 @@ private class KolHalashonCatalog(
     private var cookieHeader: String = ""
     private var client: KolHalashonClient? = null
 
-    override suspend fun shiurim(
-        ravId: Int,
-        language: ShiurLanguage,
-        fromRow: Int,
-        rowsPerPage: Int,
-    ): CatalogResult<ShiurPage> = guard { client ->
-        val page = client.ravShiurim(
-            ShiurQuery(ravId = ravId, fromRow = fromRow, rowsPerPage = rowsPerPage, language = language.wire()),
-        )
-        ShiurPage(items = page.items.toItems(ravId), fromRow = fromRow, hasMore = page.hasMore)
-    }
+    override suspend fun shiurim(ravId: Int, language: ShiurLanguage, fromRow: Int, rowsPerPage: Int): CatalogResult<ShiurPage> =
+        guard { client ->
+            val page = client.ravShiurim(
+                ShiurQuery(ravId = ravId, fromRow = fromRow, rowsPerPage = rowsPerPage, language = language.wire()),
+            )
+            ShiurPage(items = page.items.toItems(ravId), fromRow = fromRow, hasMore = page.hasMore)
+        }
 
     override suspend fun folders(ravId: Int): CatalogResult<List<ShiurFolder>> = guard { client ->
         client.ravFolders(ravId).mapNotNull { it.toFolder(ravId) }

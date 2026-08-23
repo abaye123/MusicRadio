@@ -45,6 +45,10 @@ kotlin-wrappers = "2026.8.2"
 # Bumping this needs a matching tag on that repository first, or resolution fails with a 404 that
 # reads like a network problem.
 kolhalashon = "0.2.0"
+# JavaFX, for one thing only: a WebKit engine on the desktop that can sit through the Kol Halashon
+# bot check. Artifacts carry a per-platform classifier, so they are declared by hand in shared's
+# jvmMain rather than through a version-catalog bundle.
+javafx = "25"
 
 [libraries]
 

@@ -108,6 +108,22 @@ kotlin {
         }
 
         jvmMain.dependencies {
+            // JavaFX's WebEngine is the desktop's only way past the Kol Halashon bot check without
+            // embedding a whole Chromium. Its artifacts are published per platform under a
+            // classifier, and the POMs name their siblings without one, so every module is listed
+            // explicitly for the host being built on. jpackage and the native-image packagers both
+            // build on the target OS, so the host classifier is the right one.
+            val fxClassifier = with(System.getProperty("os.name").lowercase()) {
+                val arm = System.getProperty("os.arch").lowercase() in setOf("aarch64", "arm64")
+                when {
+                    startsWith("win") -> "win"
+                    startsWith("mac") -> if (arm) "mac-aarch64" else "mac"
+                    else -> if (arm) "linux-aarch64" else "linux"
+                }
+            }
+            for (module in listOf("base", "graphics", "controls", "media", "web")) {
+                implementation("org.openjfx:javafx-$module:${libs.versions.javafx.get()}:$fxClassifier")
+            }
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)
