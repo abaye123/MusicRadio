@@ -10,10 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.Radio
@@ -37,11 +38,14 @@ import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
 import dev.kdroid.musicradio.app.ChannelEntry
 import dev.kdroid.musicradio.app.filterChannels
+import dev.kdroid.musicradio.app.filterRavs
 import dev.kdroid.musicradio.app.filterStations
+import dev.kdroid.musicradio.domain.Rav
 import dev.kdroid.musicradio.domain.Station
 import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.isFavorite
 import dev.kdroid.musicradio.ui.ChannelCard
+import dev.kdroid.musicradio.ui.RavCard
 import dev.kdroid.musicradio.ui.StationCard
 import dev.kdroid.musicradio.ui.label
 import musicradio.shared.generated.resources.Res
@@ -89,6 +93,11 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
     val stations = state.browsable
     // Names live in the resource bundle, so the search box can only be applied once they are resolved.
     val names = stations.associate { it.id to stringResource(it.name) }
+    // Ravs share the grid rather than getting a section of their own: they belong to Torah, and a
+    // second heading for one card would be more furniture than content. Empty on the browser
+    // build, where the feature does not ship at all.
+    val ravNames = state.ravs.associate { it.id to stringResource(it.name) }
+    val ravs = if (state.showRavs) filterRavs(state.ravs, state.query, ravNames) else emptyList()
     val streamsView = state.data.settings.streamsView
 
     Column(modifier.fillMaxSize().padding(horizontal = 20.dp)) {
@@ -109,12 +118,17 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
                 placeholder = { Text(stringResource(Res.string.stations_search), style = MaterialTheme.typography.bodyMedium) },
                 textStyle = MaterialTheme.typography.bodyMedium,
             )
-            ViewToggle(streamsView, Modifier.height(CONTROL_HEIGHT)) { onIntent(AppIntent.SetStreamsView(it)) }
+            ViewToggle(
+                streamsView = streamsView,
+                onChange = { onIntent(AppIntent.SetStreamsView(it)) },
+                modifier = Modifier.height(CONTROL_HEIGHT),
+            )
         }
         CategoryFilter(state, onIntent, Modifier.padding(vertical = 12.dp))
         if (streamsView) {
             ChannelGrid(
                 entries = filterChannels(stations, state.query, names),
+                ravs = ravs,
                 state = state,
                 onIntent = onIntent,
                 emptyText = stringResource(Res.string.stations_empty),
@@ -123,6 +137,7 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
         } else {
             StationGrid(
                 stations = filterStations(stations, state.query, names),
+                ravs = ravs,
                 state = state,
                 onIntent = onIntent,
                 emptyText = stringResource(Res.string.stations_empty),
@@ -141,8 +156,9 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
     val stations = state.favorites
     val channels = state.favoriteChannels
+    val ravs = state.favoriteRavs
     val grid = modifier.fillMaxSize().padding(horizontal = 20.dp)
-    if (stations.isEmpty() && channels.isEmpty()) {
+    if (stations.isEmpty() && channels.isEmpty() && ravs.isEmpty()) {
         EmptyGrid(stringResource(Res.string.favorites_empty), grid)
         return
     }
@@ -153,6 +169,7 @@ fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mo
         horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
         verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
     ) {
+        ravItems(ravs, state, onIntent)
         items(stations, key = { it.id }) { station ->
             StationCard(
                 station = station,
@@ -177,7 +194,7 @@ fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mo
 
 /** Icon-only so it stays out of the search field's way; the labels live in the descriptions. */
 @Composable
-private fun ViewToggle(streamsView: Boolean, modifier: Modifier = Modifier, onChange: (Boolean) -> Unit) {
+private fun ViewToggle(streamsView: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     SingleChoiceSegmentedButtonRow(modifier) {
         SegmentedButton(
             selected = !streamsView,
@@ -220,12 +237,13 @@ private fun CategoryFilter(state: AppState, onIntent: (AppIntent) -> Unit, modif
 @Composable
 private fun StationGrid(
     stations: List<Station>,
+    ravs: List<Rav>,
     state: AppState,
     onIntent: (AppIntent) -> Unit,
     emptyText: String,
     modifier: Modifier = Modifier,
 ) {
-    if (stations.isEmpty()) {
+    if (stations.isEmpty() && ravs.isEmpty()) {
         EmptyGrid(emptyText, modifier)
         return
     }
@@ -236,6 +254,7 @@ private fun StationGrid(
         horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
         verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
     ) {
+        ravItems(ravs, state, onIntent)
         items(stations, key = { it.id }) { station ->
             StationCard(
                 station = station,
@@ -248,15 +267,34 @@ private fun StationGrid(
     }
 }
 
+/**
+ * Rav tiles, ahead of the stations.
+ *
+ * First rather than last because there is only ever a handful of them and they are the one thing
+ * in this grid that opens rather than plays; buried under sixteen stations nobody would find them.
+ */
+private fun LazyGridScope.ravItems(ravs: List<Rav>, state: AppState, onIntent: (AppIntent) -> Unit) {
+    items(ravs, key = { "rav-" + it.id }) { rav ->
+        RavCard(
+            rav = rav,
+            playing = state.playback.shiur?.ravId == rav.id && state.playback.status.active,
+            favorite = state.data.isFavorite(rav.favoriteId),
+            onClick = { onIntent(AppIntent.OpenRav(rav.id)) },
+            onToggleFavorite = { onIntent(AppIntent.ToggleFavorite(rav.favoriteId)) },
+        )
+    }
+}
+
 @Composable
 private fun ChannelGrid(
     entries: List<ChannelEntry>,
+    ravs: List<Rav>,
     state: AppState,
     onIntent: (AppIntent) -> Unit,
     emptyText: String,
     modifier: Modifier = Modifier,
 ) {
-    if (entries.isEmpty()) {
+    if (entries.isEmpty() && ravs.isEmpty()) {
         EmptyGrid(emptyText, modifier)
         return
     }
@@ -267,6 +305,7 @@ private fun ChannelGrid(
         horizontalArrangement = Arrangement.spacedBy(GRID_SPACING),
         verticalArrangement = Arrangement.spacedBy(GRID_SPACING),
     ) {
+        ravItems(ravs, state, onIntent)
         items(entries, key = { it.channel.id }) { entry ->
             ChannelCard(
                 station = entry.station,

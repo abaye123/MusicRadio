@@ -23,6 +23,7 @@ import dev.kdroid.musicradio.main.FavoritesScreen
 import dev.kdroid.musicradio.main.LocalCompactLayout
 import dev.kdroid.musicradio.main.MainShell
 import dev.kdroid.musicradio.main.NowPlayingScreen
+import dev.kdroid.musicradio.main.RavScreen
 import dev.kdroid.musicradio.main.SettingsScreen
 import dev.kdroid.musicradio.main.StationsScreen
 import dev.kdroid.musicradio.ui.AppDialogHost
@@ -38,7 +39,7 @@ fun RootScreen(state: AppState, backStack: NavBackStack<AppKey>, onIntent: (AppI
         CompositionLocalProvider(LocalCompactLayout provides compact) {
             Box(Modifier.fillMaxSize()) {
                 val current = backStack.last()
-                if (current.isMain()) {
+                if (current.hasShell()) {
                     MainShell(state = state, destination = current, onIntent = onIntent) {
                         AppNavDisplay(backStack, state, onIntent)
                     }
@@ -71,6 +72,7 @@ private fun AppNavDisplay(backStack: NavBackStack<AppKey>, state: AppState, onIn
             entry<AppKey.Settings> { SettingsScreen(state, onIntent) }
             entry<AppKey.About> { AboutScreen() }
             entry<AppKey.NowPlaying> { NowPlayingScreen(state, onIntent) }
+            entry<AppKey.Rav> { RavScreen(state, onIntent) }
         },
     )
 }

@@ -9,6 +9,9 @@ import java.util.Locale
 private const val APP_DIR_NAME = "MusicRadio"
 
 internal actual object Platform {
+
+    actual val isPhone: Boolean = false
+
     actual val osLabel: String
         get() {
             val os = System.getProperty("os.name").orEmpty().lowercase()

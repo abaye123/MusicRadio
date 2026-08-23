@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.StarBorder
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.domain.Channel
+import dev.kdroid.musicradio.domain.Rav
 import dev.kdroid.musicradio.domain.Station
 import dev.kdroid.musicradio.domain.StationCategory
 import musicradio.shared.generated.resources.Res
@@ -40,6 +42,7 @@ import musicradio.shared.generated.resources.category_news
 import musicradio.shared.generated.resources.category_torah
 import musicradio.shared.generated.resources.favorite_add
 import musicradio.shared.generated.resources.favorite_remove
+import musicradio.shared.generated.resources.shiur_tab_all
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -263,5 +266,92 @@ fun SettingBlock(title: String, subtitle: String? = null, modifier: Modifier = M
             }
         }
         control()
+    }
+}
+
+/**
+ * A rav in the station grid.
+ *
+ * Deliberately the same tile as a station: a rav is a different kind of source - a catalog with a
+ * cursor into it rather than one endless URL - but that is the app's problem, not the user's, and
+ * a card that looked different would read as a different app. The one honest difference is the
+ * tap: this opens a catalog instead of starting a stream, which is why it carries a chevron.
+ */
+@Composable
+fun RavCard(
+    rav: Rav,
+    playing: Boolean,
+    favorite: Boolean,
+    onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = if (playing) colors.primaryContainer else colors.surfaceContainerLow,
+        tonalElevation = if (playing) 2.dp else 0.dp,
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
+                Image(
+                    painter = painterResource(rav.artwork),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.surfaceContainerHighest),
+                )
+                Surface(
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    shape = CircleShape,
+                    color = colors.scrim.copy(alpha = 0.45f),
+                ) {
+                    IconButton(onClick = onToggleFavorite, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            if (favorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                            stringResource(if (favorite) Res.string.favorite_remove else Res.string.favorite_add),
+                            modifier = Modifier.size(20.dp),
+                            // White either way: the scrim guarantees contrast on any portrait.
+                            tint = if (favorite) colors.primary else Color.White,
+                        )
+                    }
+                }
+                if (playing) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                        shape = RoundedCornerShape(50),
+                        color = colors.primary,
+                        contentColor = colors.onPrimary,
+                    ) {
+                        Icon(Icons.Outlined.GraphicEq, null, Modifier.padding(6.dp).size(16.dp))
+                    }
+                }
+            }
+            Column {
+                Text(
+                    stringResource(rav.name),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (playing) colors.onPrimaryContainer else colors.onSurface,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        stringResource(Res.string.shiur_tab_all),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (playing) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                    )
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ArrowForward,
+                        null,
+                        Modifier.size(12.dp),
+                        tint = if (playing) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }

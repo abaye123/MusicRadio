@@ -93,4 +93,41 @@
     <string name="update_restart_title">Redémarrer pour mettre à jour</string>
     <string name="update_restart_body">La mise à jour a été téléchargée. Music Radio va redémarrer pour l'installer, et la lecture s'interrompra un instant. Vous pouvez aussi simplement fermer l'application : elle s'installe à la fermeture.</string>
     <string name="update_restart_now">Redémarrer</string>
+
+    <!-- Shiurim -->
+    <string name="rav_biderman">Rav Elimelech Biderman</string>
+    <string name="shiur_count">%1$d cours</string>
+    <string name="shiur_tab_continue">Reprendre</string>
+    <string name="shiur_tab_all">Cours</string>
+    <string name="shiur_tab_folders">Dossiers</string>
+    <string name="shiur_continue_listening">Reprendre l\'écoute</string>
+    <string name="shiur_recent">Écoutés récemment</string>
+    <string name="shiur_finished">Terminé</string>
+    <string name="shiur_locked">Réservé aux abonnés</string>
+    <string name="shiur_empty">Aucun cours ici</string>
+    <string name="shiur_language">Langue des cours</string>
+    <string name="shiur_language_desc">S\'applique à tous les rabbins. Suit la langue de l\'interface tant que vous n\'en choisissez pas une.</string>
+    <string name="shiur_language_auto">Suivre l\'interface</string>
+    <string name="shiur_language_fallback">Aucun cours dans cette langue, tous sont affichés</string>
+    <string name="shiur_lang_any">Toutes</string>
+    <string name="shiur_lang_hebrew">Hébreu</string>
+    <string name="shiur_lang_yiddish">Yiddish</string>
+    <string name="shiur_lang_english">Anglais</string>
+    <string name="shiur_lang_french">Français</string>
+    <string name="shiur_rate_limited">Kol Halashon limite les requêtes en ce moment. Réessayez dans quelques minutes.</string>
+    <string name="shiur_load_failed">Impossible de charger les cours</string>
+    <string name="shiur_retry">Réessayer</string>
+    <string name="shiur_next">Cours suivant</string>
+    <string name="shiur_previous">Cours précédent</string>
+    <string name="shiur_back_15">Reculer de 15 secondes</string>
+    <string name="shiur_forward_15">Avancer de 15 secondes</string>
+    <string name="shiur_folder_back">Tous les dossiers</string>
+
+    <!-- Sleep timer -->
+    <string name="sleep_timer">Minuteur de veille</string>
+    <string name="sleep_timer_desc">Arrête la lecture au bout d\'un moment, où qu\'elle en soit.</string>
+    <string name="sleep_timer_off">Désactivé</string>
+    <string name="sleep_timer_minutes">%1$d min</string>
+    <string name="sleep_timer_end_of_shiur">Fin du cours</string>
+    <string name="sleep_timer_remaining">S\'arrête dans %1$s</string>
 </resources>

@@ -40,6 +40,11 @@ aboutLibraries = "15.0.4"
 # Pin and re-read the changelog before bumping - a 0.7 stable should replace this.
 composePwa = "0.7.0-alpha03"
 kotlin-wrappers = "2026.8.2"
+# The Kol Halashon content client. Published from abaye123/kolhalashon-kmp through JitPack, so the
+# coordinate is JitPack's com.github.<owner>:<repo> rather than the library's own dev.kdroid group.
+# Bumping this needs a matching tag on that repository first, or resolution fails with a 404 that
+# reads like a network problem.
+kolhalashon = "0.2.0"
 
 [libraries]
 
@@ -86,6 +91,7 @@ structured-coroutines-annotations = { module = "io.github.santimattius:structure
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 ktlint-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
+kolhalashon-client = { module = "com.github.abaye123:kolhalashon-kmp", version.ref = "kolhalashon" }
 
 [plugins]
 

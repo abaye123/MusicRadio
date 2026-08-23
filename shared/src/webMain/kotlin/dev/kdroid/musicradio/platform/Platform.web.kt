@@ -12,6 +12,9 @@ private const val APP_DIR = "musicradio"
 private fun setCustomLocale(tag: String): Unit = js("window.__customLocale = tag")
 
 internal actual object Platform {
+
+    actual val isPhone: Boolean = false
+
     actual val osLabel: String = "Web"
 
     actual val appVersion: String = ""

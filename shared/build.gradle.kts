@@ -36,6 +36,33 @@ kotlin {
         browser()
     }
 
+    // Adds one intermediate source set to the default hierarchy: `jvmCommonMain`, holding what
+    // Android and the desktop JVM share and the browser must not see.
+    //
+    // The Kol Halashon feature lives there rather than in commonMain so the browser build never
+    // resolves the client library at all: the API publishes no CORS policy and the web app is
+    // served from GitHub Pages with no proxy to put in front of it, so the feature does not ship
+    // there. createShiurCatalog is the seam - jvmCommonMain returns a real catalog, webMain
+    // returns null, and one expect keeps the whole decision in one place.
+    //
+    // Extended rather than hand-wired with dependsOn: a manual dependsOn turns the default
+    // template off for the whole project, and webMain - which only exists because that template
+    // creates it - would stop being the parent of jsMain and wasmJsMain, unresolving every
+    // actual the browser build has.
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmCommon") {
+                withJvm()
+                // Matched by name rather than with `withAndroidTarget()`: that matcher is for the
+                // target the old Android plugin registers, and this project is on
+                // `com.android.kotlin.multiplatform.library`, whose target it silently does not
+                // match - leaving androidMain wired straight to commonMain and every `actual` here
+                // missing on Android alone.
+                withCompilations { it.target.name == "android" }
+            }
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.compose.runtime)
@@ -56,6 +83,14 @@ kotlin {
             implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.ktor.client.core)
             api(libs.composemediaplayer.audio)
+        }
+
+        // `by getting`, not a generated accessor: those exist only for the source sets the default
+        // hierarchy names, and this one is an addition to it.
+        val jvmCommonMain by getting {
+            dependencies {
+                implementation(libs.kolhalashon.client)
+            }
         }
 
         commonTest.dependencies {

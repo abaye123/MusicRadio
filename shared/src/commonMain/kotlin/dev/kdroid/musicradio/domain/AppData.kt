@@ -51,7 +51,18 @@ data class UserSettings(
     val resumeOnLaunch: Boolean = false,
     val volume: Int = 70,
     val muted: Boolean = false,
+    /**
+     * Which language to ask a rav's catalog for. `null` follows [uiLanguage], which itself follows
+     * the device until the user picks otherwise.
+     *
+     * One setting for every rav, deliberately: someone who listens in Yiddish listens in Yiddish,
+     * and making them re-pick per rav would be asking the same question over and over.
+     */
+    val shiurLanguage: ShiurLanguage? = null,
 )
+
+/** What to actually request, once the "follow the interface" default is resolved. */
+fun UserSettings.effectiveShiurLanguage(): ShiurLanguage = shiurLanguage ?: ShiurLanguage.forUi(uiLanguage)
 
 @Immutable
 data class AppData(
@@ -59,6 +70,14 @@ data class AppData(
     val favorites: Set<String> = emptySet(),
     /** Channel id of whatever was playing when the app last closed. */
     val lastChannel: String = "",
+    /**
+     * `ravId/fileId` of the last shiur played, or empty.
+     *
+     * Kept beside [lastChannel] rather than replacing it: the two are different kinds of source and
+     * whichever ran last is the one "resume on launch" should bring back, so both have to be
+     * remembered to know which that was.
+     */
+    val lastShiur: String = "",
 )
 
 /**
@@ -69,5 +88,4 @@ data class AppData(
  */
 fun AppData.isFavorite(id: String): Boolean = id in favorites
 
-fun AppData.toggleFavorite(id: String): AppData =
-    copy(favorites = if (id in favorites) favorites - id else favorites + id)
+fun AppData.toggleFavorite(id: String): AppData = copy(favorites = if (id in favorites) favorites - id else favorites + id)
