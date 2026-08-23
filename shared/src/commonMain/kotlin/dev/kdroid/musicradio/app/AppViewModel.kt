@@ -49,8 +49,14 @@ class AppViewModel(
     private val store: AppStore,
     private val player: RadioPlayer,
     private val mediaControls: MediaControls = NoMediaControls,
-    /** Absent in tests and previews, where there is no network to read a track title from. */
-    private val icyMetadata: IcyMetadata? = null,
+    /**
+     * Deliberately non-null and without a default. Metro keys bindings on the full Kotlin type,
+     * nullability included, so `IcyMetadata?` matches no binding - and rather than failing the
+     * build it quietly took the default, leaving [watchNowPlaying] with nothing to poll and the
+     * track title permanently blank on every platform. Written this way, the same mistake is a
+     * compile error instead of a feature that is simply never there.
+     */
+    private val icyMetadata: IcyMetadata,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     @Assisted private val onQuit: () -> Unit = {},
 ) : ViewModel() {
@@ -157,7 +163,6 @@ class AppViewModel(
      * that produced it.
      */
     private fun watchNowPlaying() {
-        val metadata = icyMetadata ?: return
         scope.launch {
             _state
                 .map { it.playback.channelId to it.playback.status.active }
@@ -169,7 +174,7 @@ class AppViewModel(
                     }
                     val url = Stations.channel(channelId)?.streamUrl ?: return@collectLatest
                     while (isActive) {
-                        setNowPlaying(metadata.fetchTitle(url).orEmpty())
+                        setNowPlaying(icyMetadata.fetchTitle(url).orEmpty())
                         delay(METADATA_POLL_MS)
                     }
                 }
