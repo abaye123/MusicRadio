@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
 import dev.kdroid.musicradio.domain.AccentColor
+import dev.kdroid.musicradio.domain.SleepTimer
 import dev.kdroid.musicradio.domain.ThemeMode
 import dev.kdroid.musicradio.domain.UiLanguage
 import dev.kdroid.musicradio.ui.SectionHeader
@@ -61,6 +62,11 @@ import musicradio.shared.generated.resources.settings_reset_desc
 import musicradio.shared.generated.resources.settings_show_news
 import musicradio.shared.generated.resources.settings_show_news_desc
 import musicradio.shared.generated.resources.settings_theme
+import musicradio.shared.generated.resources.sleep_timer
+import musicradio.shared.generated.resources.sleep_timer_desc
+import musicradio.shared.generated.resources.sleep_timer_end_of_shiur
+import musicradio.shared.generated.resources.sleep_timer_minutes
+import musicradio.shared.generated.resources.sleep_timer_off
 import musicradio.shared.generated.resources.theme_dark
 import musicradio.shared.generated.resources.theme_light
 import musicradio.shared.generated.resources.theme_system
@@ -78,8 +84,9 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
             SettingBlock(stringResource(Res.string.settings_theme)) {
                 ThemePicker(
                     settings.theme,
-                    Modifier.widthIn(max = 420.dp).fillMaxWidth(),
-                ) { onIntent(AppIntent.SetTheme(it)) }
+                    onPick = { onIntent(AppIntent.SetTheme(it)) },
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                )
             }
             SettingRow(stringResource(Res.string.settings_accent)) {
                 AccentPicker(settings.accent) { onIntent(AppIntent.SetAccent(it)) }
@@ -106,6 +113,16 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
             ) {
                 Switch(checked = settings.resumeOnLaunch, onCheckedChange = { onIntent(AppIntent.SetResumeOnLaunch(it)) })
             }
+            SettingRow(
+                stringResource(Res.string.sleep_timer),
+                stringResource(Res.string.sleep_timer_desc),
+            ) {
+                SleepTimerPicker(
+                    timer = state.sleepTimer,
+                    offerEndOfShiur = state.playback.isShiur,
+                    onPick = { onIntent(AppIntent.SetSleepTimer(it)) },
+                )
+            }
 
             HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
             SectionHeader(stringResource(Res.string.settings_data))
@@ -129,7 +146,7 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 }
 
 @Composable
-private fun ThemePicker(current: ThemeMode, modifier: Modifier = Modifier, onPick: (ThemeMode) -> Unit) {
+private fun ThemePicker(current: ThemeMode, onPick: (ThemeMode) -> Unit, modifier: Modifier = Modifier) {
     SingleChoiceSegmentedButtonRow(modifier) {
         ThemeMode.entries.forEachIndexed { index, mode ->
             SegmentedButton(
@@ -194,6 +211,58 @@ private fun LanguagePicker(language: UiLanguage?, onPick: (UiLanguage?) -> Unit)
                     onClick = {
                         expanded = false
                         onPick(entry)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * [offerEndOfShiur] is false on radio, where a live stream has no end to wait for.
+ *
+ * A running [SleepTimer.EndOfShiur] that playback has since left behind still shows as the chosen
+ * value even though the menu no longer offers it: the timer really is still armed and really will
+ * stop playback, so labelling the row "off" would be a lie the user only finds out about when the
+ * music stops. Picking anything else from the menu replaces it, as usual.
+ */
+@Composable
+private fun SleepTimerPicker(timer: SleepTimer?, offerEndOfShiur: Boolean, onPick: (SleepTimer?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }) {
+            Text(
+                when (timer) {
+                    null -> stringResource(Res.string.sleep_timer_off)
+                    is SleepTimer.After -> stringResource(Res.string.sleep_timer_minutes, timer.minutes)
+                    SleepTimer.EndOfShiur -> stringResource(Res.string.sleep_timer_end_of_shiur)
+                },
+            )
+            Icon(Icons.Outlined.ExpandMore, null, Modifier.padding(start = 6.dp).size(18.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.sleep_timer_off)) },
+                onClick = {
+                    expanded = false
+                    onPick(null)
+                },
+            )
+            SleepTimer.presets.forEach { minutes ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.sleep_timer_minutes, minutes)) },
+                    onClick = {
+                        expanded = false
+                        onPick(SleepTimer.After(minutes))
+                    },
+                )
+            }
+            if (offerEndOfShiur) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.sleep_timer_end_of_shiur)) },
+                    onClick = {
+                        expanded = false
+                        onPick(SleepTimer.EndOfShiur)
                     },
                 )
             }

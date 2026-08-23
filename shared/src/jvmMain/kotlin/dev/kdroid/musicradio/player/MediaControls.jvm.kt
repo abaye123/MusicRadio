@@ -6,8 +6,7 @@ import dev.nucleusframework.media.control.MediaMetadata
 import dev.nucleusframework.media.control.MediaPlaybackState
 import dev.nucleusframework.media.control.MediaPlaybackStatus
 
-actual fun createMediaControls(): MediaControls =
-    if (MediaControlService.isAvailable()) NucleusMediaControls() else NoMediaControls
+actual fun createMediaControls(): MediaControls = if (MediaControlService.isAvailable()) NucleusMediaControls() else NoMediaControls
 
 private class NucleusMediaControls : MediaControls {
     override val available: Boolean = true
@@ -20,28 +19,41 @@ private class NucleusMediaControls : MediaControls {
         MediaControlService.attach { event ->
             val command = when (event) {
                 MediaControlEvent.Play -> MediaCommand.Play
+
                 MediaControlEvent.Pause -> MediaCommand.Pause
+
                 MediaControlEvent.Toggle -> MediaCommand.Toggle
+
                 MediaControlEvent.Next -> MediaCommand.Next
+
                 MediaControlEvent.Previous -> MediaCommand.Previous
+
                 MediaControlEvent.Stop -> MediaCommand.Stop
-                // Seeking and positions mean nothing on a live stream; volume and window
-                // commands are the OS's business, not ours.
+
+                // Forwarded unconditionally. The app drops them when nothing seekable is playing,
+                // and it is the one place that knows - the media centre only knows what it was
+                // last told, which may be a stream that has since been replaced.
+                is MediaControlEvent.SeekBy -> MediaCommand.SeekBy(event.offsetMs)
+
+                is MediaControlEvent.SetPosition -> MediaCommand.SetPosition(event.positionMs)
+
+                // Volume and window commands are the OS's business, not ours.
                 else -> null
             }
             if (command != null) onCommand(command)
         }
     }
 
-    override fun update(nowPlaying: NowPlaying, status: PlaybackStatus) {
+    override fun update(nowPlaying: NowPlaying, status: PlaybackStatus, progress: PlaybackProgress) {
         MediaControlService.setMetadata(
             MediaMetadata(
                 title = nowPlaying.title.ifBlank { nowPlaying.station }.takeIf { it.isNotBlank() },
                 artist = nowPlaying.artist.takeIf { it.isNotBlank() },
                 album = nowPlaying.station.takeIf { it.isNotBlank() },
                 coverUrl = nowPlaying.artworkUri,
-                // A live stream has no length; -1 tells the OS to hide the scrubber.
-                duration = null,
+                // Null for a live stream, which has no length, and the OS hides the scrubber.
+                // A shiur reports its real one and gets a scrubber that works.
+                duration = progress.durationMs.takeIf { progress.seekable && it > 0 },
             ),
         )
         MediaControlService.setPlaybackState(
@@ -51,6 +63,7 @@ private class NucleusMediaControls : MediaControls {
                     PlaybackStatus.Paused -> MediaPlaybackStatus.PAUSED
                     PlaybackStatus.Idle, PlaybackStatus.Error -> MediaPlaybackStatus.STOPPED
                 },
+                positionMs = progress.positionMs.takeIf { progress.seekable },
             ),
         )
     }

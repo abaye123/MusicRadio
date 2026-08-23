@@ -59,6 +59,14 @@ data class AppData(
     val favorites: Set<String> = emptySet(),
     /** Channel id of whatever was playing when the app last closed. */
     val lastChannel: String = "",
+    /**
+     * `ravId/fileId` of the last shiur played, or empty.
+     *
+     * Kept beside [lastChannel] rather than replacing it: the two are different kinds of source and
+     * whichever ran last is the one "resume on launch" should bring back, so both have to be
+     * remembered to know which that was.
+     */
+    val lastShiur: String = "",
 )
 
 /**
@@ -69,5 +77,4 @@ data class AppData(
  */
 fun AppData.isFavorite(id: String): Boolean = id in favorites
 
-fun AppData.toggleFavorite(id: String): AppData =
-    copy(favorites = if (id in favorites) favorites - id else favorites + id)
+fun AppData.toggleFavorite(id: String): AppData = copy(favorites = if (id in favorites) favorites - id else favorites + id)

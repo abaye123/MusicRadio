@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.metro)
@@ -36,6 +37,33 @@ kotlin {
         browser()
     }
 
+    // Adds one intermediate source set to the default hierarchy: `jvmCommonMain`, holding what
+    // Android and the desktop JVM share and the browser does not get.
+    //
+    // The shiurim catalogue lives there because the site it reads sends no
+    // Access-Control-Allow-Origin, so a browser cannot call it and this app is served from GitHub
+    // Pages with no proxy to put in front of it. createShiurCatalog is the seam - jvmCommonMain
+    // returns a real catalogue, webMain returns null, and one expect keeps the decision in one
+    // place.
+    //
+    // Extended rather than hand-wired with dependsOn: a manual dependsOn turns the default
+    // template off for the whole project, and webMain - which only exists because that template
+    // creates it - would stop being the parent of jsMain and wasmJsMain, unresolving every
+    // actual the browser build has.
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmCommon") {
+                withJvm()
+                // Matched by name rather than with `withAndroidTarget()`: that matcher is for the
+                // target the old Android plugin registers, and this project is on
+                // `com.android.kotlin.multiplatform.library`, whose target it silently does not
+                // match - leaving androidMain wired straight to commonMain and every `actual` here
+                // missing on Android alone.
+                withCompilations { it.target.name == "android" }
+            }
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.compose.runtime)
@@ -55,6 +83,8 @@ kotlin {
             implementation(libs.materialKolor)
             implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
             api(libs.composemediaplayer.audio)
         }
 

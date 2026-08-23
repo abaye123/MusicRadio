@@ -16,6 +16,7 @@ import dev.kdroid.musicradio.di.AppGraph
 import dev.kdroid.musicradio.di.createAppGraph
 import dev.kdroid.musicradio.domain.AccentColor
 import dev.kdroid.musicradio.domain.ThemeMode
+import dev.kdroid.musicradio.main.LocalPlayerTick
 import dev.kdroid.musicradio.platform.ProvideAppLocale
 import dev.kdroid.musicradio.theme.RadioTheme
 
@@ -47,7 +48,11 @@ fun App(
     val direction = if (language.rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     ProvideAppLocale(language.code) {
         RadioTheme(accent = settings.accent, isDark = isDark) {
-            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides direction,
+                // The flow, not its value: see LocalPlayerTick.
+                LocalPlayerTick provides vm.tick,
+            ) {
                 RootScreen(state = state, backStack = vm.backStack, onIntent = vm::onIntent)
             }
         }

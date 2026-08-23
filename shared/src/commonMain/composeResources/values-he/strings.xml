@@ -93,4 +93,33 @@
     <string name="update_restart_title">הפעלה מחדש לעדכון</string>
     <string name="update_restart_body">העדכון ירד למחשב. מיוזיק רדיו יופעל מחדש כדי להתקין אותו, וההשמעה תיפסק לרגע. אפשר גם פשוט לסגור את התוכנה - העדכון יותקן ביציאה.</string>
     <string name="update_restart_now">להפעיל מחדש</string>
+
+    <!-- Shiurim -->
+    <string name="rav_biderman">הרב אלימלך בידרמן</string>
+    <string name="rav_ettinger">הרב אריה אטינגר</string>
+    <string name="rav_lasri">הרב מיכאל לסרי</string>
+    <string name="shiur_count">%1$d שיעורים</string>
+    <string name="shiur_tab_continue">המשך</string>
+    <string name="shiur_tab_all">שיעורים</string>
+    <string name="shiur_tab_folders">תיקיות</string>
+    <string name="shiur_continue_listening">המשך האזנה</string>
+    <string name="shiur_recent">נשמעו לאחרונה</string>
+    <string name="shiur_finished">הסתיים</string>
+    <string name="shiur_empty">אין כאן שיעורים</string>
+    <string name="shiur_rate_limited">הארכיון דוחה בקשות כרגע. נסה שוב בעוד כמה דקות.</string>
+    <string name="shiur_load_failed">לא הצלחנו לטעון את השיעורים</string>
+    <string name="shiur_retry">נסה שוב</string>
+    <string name="shiur_next">השיעור הבא</string>
+    <string name="shiur_previous">השיעור הקודם</string>
+    <string name="shiur_back_15">אחורה 15 שניות</string>
+    <string name="shiur_forward_15">קדימה 15 שניות</string>
+    <string name="shiur_folder_back">כל התיקיות</string>
+
+    <!-- Sleep timer -->
+    <string name="sleep_timer">טיימר שינה</string>
+    <string name="sleep_timer_desc">עוצר את הניגון אחרי זמן קצוב, בכל מקום שהוא הגיע אליו.</string>
+    <string name="sleep_timer_off">כבוי</string>
+    <string name="sleep_timer_minutes">%1$d דק׳</string>
+    <string name="sleep_timer_end_of_shiur">בסוף השיעור</string>
+    <string name="sleep_timer_remaining">נעצר בעוד %1$s</string>
 </resources>

@@ -25,8 +25,7 @@ internal expect object Platform {
 
 internal fun systemUiLanguage(): UiLanguage = UiLanguage.fromCode(Platform.systemLanguage())
 
-internal fun pathSeparator(path: String): Char =
-    if (path.contains('\\') && !path.contains('/')) '\\' else '/'
+internal fun pathSeparator(path: String): Char = if (path.contains('\\') && !path.contains('/')) '\\' else '/'
 
 internal fun joinPath(dir: String, name: String): String {
     val sep = pathSeparator(dir)

@@ -25,6 +25,9 @@ sealed interface AppKey : NavKey {
 
     /** Only reachable on a compact window, where the player cannot share the screen with the list. */
     data object NowPlaying : AppKey
+
+    /** One rav's catalog. Pushed onto the back stack rather than replacing the main destination. */
+    data class Rav(val ravId: Int) : AppKey
 }
 
 val MainDestinations: List<AppKey> = listOf(
@@ -36,6 +39,15 @@ val MainDestinations: List<AppKey> = listOf(
 
 fun AppKey.isMain(): Boolean = this in MainDestinations
 
+/**
+ * Whether the destination keeps the app shell - navigation and the player bar - around it.
+ *
+ * Everything does except [AppKey.NowPlaying], which *is* the player blown up to fill a compact
+ * window and would be showing it twice. A rav's catalogue is not a main destination, but it is the
+ * screen a shiur starts playing from, so it very much wants the player bar underneath it.
+ */
+fun AppKey.hasShell(): Boolean = this != AppKey.NowPlaying
+
 @Composable
 fun AppKey.label(): String = when (this) {
     AppKey.Stations -> stringResource(Res.string.nav_stations)
@@ -43,6 +55,7 @@ fun AppKey.label(): String = when (this) {
     AppKey.Settings -> stringResource(Res.string.nav_settings)
     AppKey.About -> stringResource(Res.string.nav_about)
     AppKey.NowPlaying -> ""
+    is AppKey.Rav -> ""
 }
 
 fun AppKey.icon(): ImageVector = when (this) {
@@ -51,4 +64,5 @@ fun AppKey.icon(): ImageVector = when (this) {
     AppKey.Settings -> Icons.Outlined.Settings
     AppKey.About -> Icons.Outlined.Info
     AppKey.NowPlaying -> Icons.Outlined.Radio
+    is AppKey.Rav -> Icons.Outlined.Radio
 }

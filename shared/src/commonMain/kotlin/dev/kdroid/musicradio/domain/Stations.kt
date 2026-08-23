@@ -173,12 +173,7 @@ enum class StationCategory { Music, Torah, News }
  * which case the station's own logo stands in.
  */
 @Immutable
-data class Channel(
-    val id: String,
-    val streamUrl: String,
-    val title: String? = null,
-    val artwork: DrawableResource? = null,
-)
+data class Channel(val id: String, val streamUrl: String, val title: String? = null, val artwork: DrawableResource? = null)
 
 @Immutable
 data class Station(
@@ -261,7 +256,12 @@ object Stations {
             category = StationCategory.Music,
             channels = listOf(
                 Channel("kol_hay_music/main", "https://live.kcm.fm/livemusic", artwork = Res.drawable.channel_kcm_livemusic),
-                Channel("kol_hay_music/112", "https://live.kcm.fm/112", "פלייליסט שירי השבת של אסם נסטלה", artwork = Res.drawable.channel_kcm_112),
+                Channel(
+                    "kol_hay_music/112",
+                    "https://live.kcm.fm/112",
+                    "פלייליסט שירי השבת של אסם נסטלה",
+                    artwork = Res.drawable.channel_kcm_112,
+                ),
                 Channel("kol_hay_music/17", "https://live.kcm.fm/17", "תענוג לשבת", artwork = Res.drawable.channel_kcm_17),
                 Channel("kol_hay_music/665", "https://live.kcm.fm/665", "שרים רפואה", artwork = Res.drawable.channel_kcm_665),
                 Channel("kol_hay_music/117", "https://live.kcm.fm/117", "חסידיש רוטבלט", artwork = Res.drawable.channel_kcm_117),
@@ -452,8 +452,20 @@ object Stations {
                 Channel("makelet_shira/vocal", "https://music.shira24.com:5001/8", "ווקאלי Vocal"),
             ),
         ),
-        single("toker_fm", Res.string.station_toker_fm, Res.drawable.station_toker_fm, StationCategory.Music, "https://broadcast.adpronet.com/radio/6060/radio.mp3"),
-        single("chabad_org", Res.string.station_chabad_org, Res.drawable.station_chabad_org, StationCategory.Music, "https://stream.radio.co/sdfd68a101/listen"),
+        single(
+            "toker_fm",
+            Res.string.station_toker_fm,
+            Res.drawable.station_toker_fm,
+            StationCategory.Music,
+            "https://broadcast.adpronet.com/radio/6060/radio.mp3",
+        ),
+        single(
+            "chabad_org",
+            Res.string.station_chabad_org,
+            Res.drawable.station_chabad_org,
+            StationCategory.Music,
+            "https://stream.radio.co/sdfd68a101/listen",
+        ),
         single(
             "lakewood_scoop",
             Res.string.station_lakewood_scoop,
@@ -475,13 +487,8 @@ object Stations {
 
     fun stationOfChannel(id: String): Station? = all.firstOrNull { station -> station.channels.any { it.id == id } }
 
-    private fun single(
-        id: String,
-        name: StringResource,
-        artwork: DrawableResource,
-        category: StationCategory,
-        streamUrl: String,
-    ) = Station(id, name, artwork, category, listOf(Channel("$id/main", streamUrl)))
+    private fun single(id: String, name: StringResource, artwork: DrawableResource, category: StationCategory, streamUrl: String) =
+        Station(id, name, artwork, category, listOf(Channel("$id/main", streamUrl)))
 }
 
 /** The list the user actually sees: news channels are optional, everything else always shows. */

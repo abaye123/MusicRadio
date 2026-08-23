@@ -22,6 +22,7 @@ private const val KEY_VOLUME = "volume"
 private const val KEY_MUTED = "muted"
 private const val KEY_FAVORITES = "favorites"
 private const val KEY_LAST_CHANNEL = "lastChannel"
+private const val KEY_LAST_SHIUR = "lastShiur"
 
 fun encodeSnapshot(data: AppData): String {
     val s = data.settings
@@ -37,6 +38,7 @@ fun encodeSnapshot(data: AppData): String {
         add("$KEY_MUTED=${s.muted}")
         add("$KEY_FAVORITES=${data.favorites.sorted().joinToString(",")}")
         add("$KEY_LAST_CHANNEL=${data.lastChannel}")
+        add("$KEY_LAST_SHIUR=${data.lastShiur}")
     }.joinToString("\n")
 }
 
@@ -66,5 +68,6 @@ fun decodeSnapshot(raw: String): AppData {
         settings = settings,
         favorites = map[KEY_FAVORITES].orEmpty().split(',').filter { it.isNotBlank() }.toSet(),
         lastChannel = map[KEY_LAST_CHANNEL].orEmpty(),
+        lastShiur = map[KEY_LAST_SHIUR].orEmpty(),
     )
 }

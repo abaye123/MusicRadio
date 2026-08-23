@@ -1,5 +1,7 @@
 package dev.kdroid.musicradio.di
 
+import dev.kdroid.musicradio.data.ShiurRepository
+import dev.kdroid.musicradio.data.createShiurCatalog
 import dev.kdroid.musicradio.platform.IoDispatcher
 import dev.kdroid.musicradio.platform.createHttpClient
 import dev.kdroid.musicradio.player.IcyMetadata
@@ -52,4 +54,10 @@ object AppBindings {
     @Provides
     @SingleIn(AppScope::class)
     fun provideIcyMetadata(http: HttpClient): IcyMetadata = IcyMetadata(http)
+
+    // One catalog, sharing the app's connection pool. `createShiurCatalog` answers null on the
+    // browser build, and the repository reports itself unavailable from there on.
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideShiurRepository(http: HttpClient): ShiurRepository = ShiurRepository(createShiurCatalog(http))
 }

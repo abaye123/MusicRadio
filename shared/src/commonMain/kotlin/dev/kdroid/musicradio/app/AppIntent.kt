@@ -1,6 +1,9 @@
 package dev.kdroid.musicradio.app
 
 import dev.kdroid.musicradio.domain.AccentColor
+import dev.kdroid.musicradio.domain.ShiurFolder
+import dev.kdroid.musicradio.domain.ShiurItem
+import dev.kdroid.musicradio.domain.SleepTimer
 import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.ThemeMode
 import dev.kdroid.musicradio.domain.UiLanguage
@@ -16,17 +19,42 @@ sealed interface AppIntent {
     data class SelectChannel(val channelId: String) : AppIntent
     data object TogglePlay : AppIntent
     data object Stop : AppIntent
+
+    /**
+     * What the OS media keys and the transport bar both send. Which way they step depends on what
+     * is playing: through the station list on radio, through the shiur list on a shiur.
+     */
     data object NextStation : AppIntent
     data object PreviousStation : AppIntent
     data class SetVolume(val percent: Int) : AppIntent
     data object ToggleMute : AppIntent
 
-    /** [id] is a station id or a channel id; see `AppData.toggleFavorite`. */
+    /** [id] is a station, channel, rav or folder id; see `AppData.toggleFavorite`. */
     data class ToggleFavorite(val id: String) : AppIntent
     data class SetSearchQuery(val query: String) : AppIntent
 
     /** `null` clears the filter and shows every category. */
     data class SetCategory(val category: StationCategory?) : AppIntent
+
+    // ------------------------------------------------------------------ shiurim
+
+    /** Opens the rav screen and, in the background, works out and starts the right shiur. */
+    data class OpenRav(val ravId: Int) : AppIntent
+    data class SelectRavTab(val tab: RavTab) : AppIntent
+
+    data class OpenFolder(val folder: ShiurFolder) : AppIntent
+    data object CloseFolder : AppIntent
+    data class PlayShiur(val shiur: ShiurItem) : AppIntent
+    data object LoadMoreShiurim : AppIntent
+    data object RetryShiurim : AppIntent
+    data object NextShiur : AppIntent
+    data object PreviousShiur : AppIntent
+
+    /** Negative steps back. Clamped to the shiur; ignored on a live stream. */
+    data class SkipBy(val deltaMs: Long) : AppIntent
+    data class SeekTo(val positionMs: Long) : AppIntent
+
+    // ------------------------------------------------------------------ settings
 
     data class SetTheme(val mode: ThemeMode) : AppIntent
     data class SetAccent(val accent: AccentColor) : AppIntent
@@ -36,6 +64,9 @@ sealed interface AppIntent {
     data class SetShowNews(val on: Boolean) : AppIntent
     data class SetStreamsView(val on: Boolean) : AppIntent
     data class SetResumeOnLaunch(val on: Boolean) : AppIntent
+
+    /** `null` cancels a running timer. Applies to whatever is playing, radio or shiur. */
+    data class SetSleepTimer(val timer: SleepTimer?) : AppIntent
 
     data class OpenUrl(val url: String) : AppIntent
 
