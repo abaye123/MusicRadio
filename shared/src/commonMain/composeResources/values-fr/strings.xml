@@ -96,6 +96,8 @@
 
     <!-- Shiurim -->
     <string name="rav_biderman">Rav Elimelech Biderman</string>
+    <string name="rav_ettinger">Rav Arye Ettinger</string>
+    <string name="rav_lasri">Rav Michael Lasri</string>
     <string name="shiur_count">%1$d cours</string>
     <string name="shiur_tab_continue">Reprendre</string>
     <string name="shiur_tab_all">Cours</string>
@@ -103,18 +105,8 @@
     <string name="shiur_continue_listening">Reprendre l\'écoute</string>
     <string name="shiur_recent">Écoutés récemment</string>
     <string name="shiur_finished">Terminé</string>
-    <string name="shiur_locked">Réservé aux abonnés</string>
     <string name="shiur_empty">Aucun cours ici</string>
-    <string name="shiur_language">Langue des cours</string>
-    <string name="shiur_language_desc">S\'applique à tous les rabbins. Suit la langue de l\'interface tant que vous n\'en choisissez pas une.</string>
-    <string name="shiur_language_auto">Suivre l\'interface</string>
-    <string name="shiur_language_fallback">Aucun cours dans cette langue, tous sont affichés</string>
-    <string name="shiur_lang_any">Toutes</string>
-    <string name="shiur_lang_hebrew">Hébreu</string>
-    <string name="shiur_lang_yiddish">Yiddish</string>
-    <string name="shiur_lang_english">Anglais</string>
-    <string name="shiur_lang_french">Français</string>
-    <string name="shiur_rate_limited">Kol Halashon limite les requêtes en ce moment. Réessayez dans quelques minutes.</string>
+    <string name="shiur_rate_limited">L\'archive refuse les requêtes en ce moment. Réessayez dans quelques minutes.</string>
     <string name="shiur_load_failed">Impossible de charger les cours</string>
     <string name="shiur_retry">Réessayer</string>
     <string name="shiur_next">Cours suivant</string>

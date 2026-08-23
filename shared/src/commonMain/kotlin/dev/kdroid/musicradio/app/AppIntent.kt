@@ -3,7 +3,6 @@ package dev.kdroid.musicradio.app
 import dev.kdroid.musicradio.domain.AccentColor
 import dev.kdroid.musicradio.domain.ShiurFolder
 import dev.kdroid.musicradio.domain.ShiurItem
-import dev.kdroid.musicradio.domain.ShiurLanguage
 import dev.kdroid.musicradio.domain.SleepTimer
 import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.ThemeMode
@@ -43,8 +42,6 @@ sealed interface AppIntent {
     data class OpenRav(val ravId: Int) : AppIntent
     data class SelectRavTab(val tab: RavTab) : AppIntent
 
-    /** `null` goes back to following the interface language. Applies to every rav, at once. */
-    data class SetShiurLanguage(val language: ShiurLanguage?) : AppIntent
     data class OpenFolder(val folder: ShiurFolder) : AppIntent
     data object CloseFolder : AppIntent
     data class PlayShiur(val shiur: ShiurItem) : AppIntent

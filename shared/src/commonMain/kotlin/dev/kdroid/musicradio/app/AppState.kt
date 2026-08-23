@@ -66,8 +66,6 @@ data class RavScreenState(
     val loadingMore: Boolean = false,
     val hasMore: Boolean = false,
     val error: ShiurError? = null,
-    /** The chosen language had nothing, so this list is every language instead. */
-    val languageFallback: Boolean = false,
 ) {
     val rav: Rav? get() = Ravs.of(ravId)
 }

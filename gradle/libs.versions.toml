@@ -40,15 +40,6 @@ aboutLibraries = "15.0.4"
 # Pin and re-read the changelog before bumping - a 0.7 stable should replace this.
 composePwa = "0.7.0-alpha03"
 kotlin-wrappers = "2026.8.2"
-# The Kol Halashon content client. Published from abaye123/kolhalashon-kmp through JitPack, so the
-# coordinate is JitPack's com.github.<owner>:<repo> rather than the library's own dev.kdroid group.
-# Bumping this needs a matching tag on that repository first, or resolution fails with a 404 that
-# reads like a network problem.
-kolhalashon = "0.2.0"
-# JavaFX, for one thing only: a WebKit engine on the desktop that can sit through the Kol Halashon
-# bot check. Artifacts carry a per-platform classifier, so they are declared by hand in shared's
-# jvmMain rather than through a version-catalog bundle.
-javafx = "25"
 
 [libraries]
 
@@ -95,12 +86,12 @@ structured-coroutines-annotations = { module = "io.github.santimattius:structure
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "compose-rules" }
 ktlint-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "compose-rules" }
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
-kolhalashon-client = { module = "com.github.abaye123.kolhalashon-kmp:kolhalashon", version.ref = "kolhalashon" }
 
 [plugins]
 
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

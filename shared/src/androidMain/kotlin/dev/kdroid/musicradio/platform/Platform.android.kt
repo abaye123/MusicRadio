@@ -25,8 +25,6 @@ internal fun androidContext(): Context = ctx()
 
 internal actual object Platform {
 
-    actual val isPhone: Boolean = true
-
     actual val osLabel: String = "Android"
 
     actual val appVersion: String

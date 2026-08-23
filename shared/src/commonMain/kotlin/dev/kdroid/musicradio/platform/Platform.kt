@@ -21,15 +21,6 @@ internal expect object Platform {
      */
     fun systemLanguage(): String
     fun openUrl(url: String)
-
-    /**
-     * Whether this is a handset rather than a desktop or a browser tab.
-     *
-     * Used for the one thing the Kol Halashon catalog marks per form factor: folders it flags as
-     * hidden from phones. Following that flag keeps the app's folder list matching the site's, so
-     * a user can cross-check one against the other.
-     */
-    val isPhone: Boolean
 }
 
 internal fun systemUiLanguage(): UiLanguage = UiLanguage.fromCode(Platform.systemLanguage())

@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
 import dev.kdroid.musicradio.domain.AccentColor
-import dev.kdroid.musicradio.domain.ShiurLanguage
 import dev.kdroid.musicradio.domain.SleepTimer
 import dev.kdroid.musicradio.domain.ThemeMode
 import dev.kdroid.musicradio.domain.UiLanguage
@@ -63,14 +62,6 @@ import musicradio.shared.generated.resources.settings_reset_desc
 import musicradio.shared.generated.resources.settings_show_news
 import musicradio.shared.generated.resources.settings_show_news_desc
 import musicradio.shared.generated.resources.settings_theme
-import musicradio.shared.generated.resources.shiur_lang_any
-import musicradio.shared.generated.resources.shiur_lang_english
-import musicradio.shared.generated.resources.shiur_lang_french
-import musicradio.shared.generated.resources.shiur_lang_hebrew
-import musicradio.shared.generated.resources.shiur_lang_yiddish
-import musicradio.shared.generated.resources.shiur_language
-import musicradio.shared.generated.resources.shiur_language_auto
-import musicradio.shared.generated.resources.shiur_language_desc
 import musicradio.shared.generated.resources.sleep_timer
 import musicradio.shared.generated.resources.sleep_timer_desc
 import musicradio.shared.generated.resources.sleep_timer_end_of_shiur
@@ -79,7 +70,6 @@ import musicradio.shared.generated.resources.sleep_timer_off
 import musicradio.shared.generated.resources.theme_dark
 import musicradio.shared.generated.resources.theme_light
 import musicradio.shared.generated.resources.theme_system
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -122,19 +112,6 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
                 stringResource(Res.string.settings_autoplay_desc),
             ) {
                 Switch(checked = settings.resumeOnLaunch, onCheckedChange = { onIntent(AppIntent.SetResumeOnLaunch(it)) })
-            }
-            // The browser build ships without the shiurim feature, and a setting for a feature that
-            // is not there is worse than no setting at all.
-            if (state.ravs.isNotEmpty()) {
-                SettingRow(
-                    stringResource(Res.string.shiur_language),
-                    stringResource(Res.string.shiur_language_desc),
-                ) {
-                    ShiurLanguagePicker(
-                        language = settings.shiurLanguage,
-                        onPick = { onIntent(AppIntent.SetShiurLanguage(it)) },
-                    )
-                }
             }
             SettingRow(
                 stringResource(Res.string.sleep_timer),
@@ -231,57 +208,6 @@ private fun LanguagePicker(language: UiLanguage?, onPick: (UiLanguage?) -> Unit)
             UiLanguage.entries.forEach { entry ->
                 DropdownMenuItem(
                     text = { Text(entry.label) },
-                    onClick = {
-                        expanded = false
-                        onPick(entry)
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * The order the picker offers, which is not the enum's: the concrete languages come first, in the
- * order a listener is likely to want them, and "all" reads as the fallback it is, so it goes last.
- */
-private val shiurLanguages = listOf(
-    ShiurLanguage.Hebrew,
-    ShiurLanguage.Yiddish,
-    ShiurLanguage.English,
-    ShiurLanguage.French,
-    ShiurLanguage.Any,
-)
-
-private val ShiurLanguage.label: StringResource
-    get() = when (this) {
-        ShiurLanguage.Hebrew -> Res.string.shiur_lang_hebrew
-        ShiurLanguage.Yiddish -> Res.string.shiur_lang_yiddish
-        ShiurLanguage.English -> Res.string.shiur_lang_english
-        ShiurLanguage.French -> Res.string.shiur_lang_french
-        ShiurLanguage.Any -> Res.string.shiur_lang_any
-    }
-
-/** `null` is the "follow the interface language" default, exactly as in [LanguagePicker]. */
-@Composable
-private fun ShiurLanguagePicker(language: ShiurLanguage?, onPick: (ShiurLanguage?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        OutlinedButton(onClick = { expanded = true }) {
-            Text(stringResource(language?.label ?: Res.string.shiur_language_auto))
-            Icon(Icons.Outlined.ExpandMore, null, Modifier.padding(start = 6.dp).size(18.dp))
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.shiur_language_auto)) },
-                onClick = {
-                    expanded = false
-                    onPick(null)
-                },
-            )
-            shiurLanguages.forEach { entry ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(entry.label)) },
                     onClick = {
                         expanded = false
                         onPick(entry)

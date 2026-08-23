@@ -3,7 +3,6 @@ package dev.kdroid.musicradio.main
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,11 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,15 +34,9 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +50,6 @@ import dev.kdroid.musicradio.data.ShiurProgress
 import dev.kdroid.musicradio.domain.Rav
 import dev.kdroid.musicradio.domain.ShiurFolder
 import dev.kdroid.musicradio.domain.ShiurItem
-import dev.kdroid.musicradio.domain.ShiurLanguage
 import dev.kdroid.musicradio.ui.SectionHeader
 import musicradio.shared.generated.resources.Res
 import musicradio.shared.generated.resources.favorite_add
@@ -72,15 +60,7 @@ import musicradio.shared.generated.resources.shiur_count
 import musicradio.shared.generated.resources.shiur_empty
 import musicradio.shared.generated.resources.shiur_finished
 import musicradio.shared.generated.resources.shiur_folder_back
-import musicradio.shared.generated.resources.shiur_lang_any
-import musicradio.shared.generated.resources.shiur_lang_english
-import musicradio.shared.generated.resources.shiur_lang_french
-import musicradio.shared.generated.resources.shiur_lang_hebrew
-import musicradio.shared.generated.resources.shiur_lang_yiddish
-import musicradio.shared.generated.resources.shiur_language_auto
-import musicradio.shared.generated.resources.shiur_language_fallback
 import musicradio.shared.generated.resources.shiur_load_failed
-import musicradio.shared.generated.resources.shiur_locked
 import musicradio.shared.generated.resources.shiur_rate_limited
 import musicradio.shared.generated.resources.shiur_recent
 import musicradio.shared.generated.resources.shiur_retry
@@ -90,24 +70,23 @@ import musicradio.shared.generated.resources.shiur_tab_folders
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
-/** How close to the bottom of the list counts as "about to run out" and asks for the next page. */
-private const val LOAD_MORE_THRESHOLD = 6
-
 /** The continue tab is a shortcut, not a history: past a handful of rows it stops being one. */
 private const val RECENT_LIMIT = 5
 
-/** Rows drawn while the first page is on its way, so the list area keeps its shape. */
+/** Rows drawn while the catalogue is on its way, so the list area keeps its shape. */
 private const val PLACEHOLDER_ROWS = 6
 
 private val ROW_SHAPE = RoundedCornerShape(14.dp)
 private val CARD_SHAPE = RoundedCornerShape(20.dp)
 
 /**
- * One rav's catalog: his portrait, the language he is listened to in, and the three ways into the
- * shiurim themselves.
+ * One rav's catalog: his portrait and the three ways into the shiurim themselves.
  *
  * A station is one endless URL and needs no screen of its own; a rav is a catalog with a cursor
  * into it, and every control here exists to move that cursor.
+ *
+ * Which rav is a question for [AppState.rav] alone: the screen never assumes there is only one,
+ * and draws whichever the state currently points at.
  */
 @Composable
 fun RavScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -115,11 +94,7 @@ fun RavScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier
     Column(modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         val rav = screen.rav ?: return@Column
         RavHeader(rav, rav.favoriteId in state.data.favorites, onIntent)
-        LanguageChips(rav, state.data.settings.shiurLanguage, onIntent, Modifier.padding(bottom = 12.dp))
         TabPicker(screen.tab, onIntent, Modifier.fillMaxWidth())
-        if (screen.languageFallback) {
-            Note(stringResource(Res.string.shiur_language_fallback), Modifier.padding(top = 12.dp))
-        }
         when (screen.error) {
             // No retry button on purpose: the block is counted per request, so trying again is
             // exactly what keeps it alive. Waiting is the only thing that works.
@@ -161,8 +136,8 @@ private fun RavHeader(rav: Rav, favorite: Boolean, onIntent: (AppIntent) -> Unit
             contentScale = ContentScale.Crop,
             modifier = Modifier.size(56.dp).clip(ROW_SHAPE).background(colors.surfaceContainerHighest),
         )
-        // No shiur count beside the name: `items` is one page of an open-ended catalogue, so any
-        // number here would be the size of what has been fetched rather than of what exists.
+        // No shiur count beside the name: the tabs already slice the catalogue three ways, and a
+        // single number over all of them answers none of the three questions they ask.
         Text(
             stringResource(rav.name),
             modifier = Modifier.weight(1f),
@@ -179,45 +154,6 @@ private fun RavHeader(rav: Rav, favorite: Boolean, onIntent: (AppIntent) -> Unit
             )
         }
     }
-}
-
-/**
- * The rav's own languages, plus "all" and plus following the interface.
- *
- * The auto chip is a chip rather than a cleared selection because "no filter" and "the language you
- * are reading this in" are different answers, and only one of them is the default.
- */
-@Composable
-private fun LanguageChips(rav: Rav, selected: ShiurLanguage?, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
-    val chips: List<ShiurLanguage?> = remember(rav) {
-        buildList {
-            add(null)
-            rav.languages.filterTo(this) { it != ShiurLanguage.Any }
-            add(ShiurLanguage.Any)
-        }
-    }
-    Row(
-        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        chips.forEach { language ->
-            FilterChip(
-                selected = selected == language,
-                onClick = { onIntent(AppIntent.SetShiurLanguage(language)) },
-                label = { Text(languageLabel(language), maxLines = 1) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun languageLabel(language: ShiurLanguage?): String = when (language) {
-    null -> stringResource(Res.string.shiur_language_auto)
-    ShiurLanguage.Any -> stringResource(Res.string.shiur_lang_any)
-    ShiurLanguage.Hebrew -> stringResource(Res.string.shiur_lang_hebrew)
-    ShiurLanguage.English -> stringResource(Res.string.shiur_lang_english)
-    ShiurLanguage.Yiddish -> stringResource(Res.string.shiur_lang_yiddish)
-    ShiurLanguage.French -> stringResource(Res.string.shiur_lang_french)
 }
 
 @Composable
@@ -277,7 +213,8 @@ private fun ContinueTab(state: AppState, onIntent: (AppIntent) -> Unit, modifier
 private fun ContinueCard(item: ShiurItem, progress: ShiurProgress?, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val elapsed = progress?.positionMs ?: 0L
-    // The stored duration wins: the catalogue rounds, the player measured it.
+    // The stored duration wins: the catalogue almost never states one, and where it does the
+    // player has measured it since. Zero means nobody knows yet, and gets no clock at all.
     val total = progress?.durationMs?.takeIf { it > 0 } ?: item.durationMs
     Surface(
         modifier = modifier.clickable { onIntent(AppIntent.PlayShiur(item)) },
@@ -302,7 +239,9 @@ private fun ContinueCard(item: ShiurItem, progress: ShiurProgress?, onIntent: (A
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatClock(elapsed), style = MaterialTheme.typography.labelSmall)
-                Text(formatClock(total), style = MaterialTheme.typography.labelSmall)
+                if (total > 0) {
+                    Text(formatClock(total), style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }
@@ -313,6 +252,9 @@ private fun ContinueCard(item: ShiurItem, progress: ShiurProgress?, onIntent: (A
 /**
  * The shiur list, shared by the all tab and by an open folder: `items` holds whichever of the two
  * the state is currently showing, so one list serves both.
+ *
+ * There is no paging here and no "loading more" row: a rav's whole archive is a few dozen
+ * recordings and arrives in a single call, so the list is always complete the moment it is drawn.
  */
 @Composable
 private fun ShiurList(state: AppState, items: List<ShiurItem>, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
@@ -320,35 +262,14 @@ private fun ShiurList(state: AppState, items: List<ShiurItem>, onIntent: (AppInt
         EmptyList(state.rav.error == null, modifier)
         return
     }
-    val listState = rememberLazyListState()
-    val send by rememberUpdatedState(onIntent)
-    // Derived rather than read straight out of the layout: this recomposes when the last visible
-    // row changes, not on every pixel of scroll.
-    val lastVisible by remember {
-        derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
-    }
-    val hasMore = state.rav.hasMore
-    val loadingMore = state.rav.loadingMore
-    LaunchedEffect(lastVisible, items.size, hasMore, loadingMore) {
-        if (hasMore && !loadingMore && lastVisible >= items.size - LOAD_MORE_THRESHOLD) {
-            send(AppIntent.LoadMoreShiurim)
-        }
-    }
     LazyColumn(
-        state = listState,
         modifier = modifier,
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items, key = { it.fileId }) { item ->
+        // Keyed by rav and file both: a file id is only unique within the rav that published it.
+        items(items, key = { it.key }) { item ->
             ShiurRow(state, item, onIntent, Modifier.fillMaxWidth())
-        }
-        if (loadingMore) {
-            item {
-                Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                }
-            }
         }
     }
 }
@@ -359,9 +280,7 @@ private fun ShiurRow(state: AppState, item: ShiurItem, onIntent: (AppIntent) -> 
     val progress = state.progressOf(item)
     val playing = state.playback.shiur?.fileId == item.fileId
     Surface(
-        // Locked rows are inert rather than merely sad-looking: the library refuses to hand out a
-        // subscriber-only URL, so a tap here could only ever end in an error message.
-        modifier = modifier.clickable(enabled = !item.locked) { onIntent(AppIntent.PlayShiur(item)) },
+        modifier = modifier.clickable { onIntent(AppIntent.PlayShiur(item)) },
         shape = ROW_SHAPE,
         color = if (playing) colors.primaryContainer else colors.surfaceContainerLow,
         contentColor = if (playing) colors.onPrimaryContainer else colors.onSurface,
@@ -376,7 +295,6 @@ private fun ShiurRow(state: AppState, item: ShiurItem, onIntent: (AppIntent) -> 
                 fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = if (item.locked) colors.onSurfaceVariant else Color.Unspecified,
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -385,14 +303,15 @@ private fun ShiurRow(state: AppState, item: ShiurItem, onIntent: (AppIntent) -> 
                 // Plain ISO rather than a formatted date: this app has no calendar dependency, and
                 // a half-localised date is worse than an unambiguous one.
                 item.recordedAt?.let { Meta(it.date.toString()) }
-                if (item.durationMs > 0) {
-                    Meta(formatClock(item.durationMs))
+                // Usually nothing: the source ships no length, so the row stays silent about it
+                // rather than claiming `0:00`. Playing it once teaches the progress store the real
+                // duration, and the row picks it up from there.
+                val duration = progress?.durationMs?.takeIf { it > 0 } ?: item.durationMs
+                if (duration > 0) {
+                    Meta(formatClock(duration))
                 }
                 if (progress?.finished == true) {
                     Meta(stringResource(Res.string.shiur_finished), icon = Icons.Outlined.CheckCircle)
-                }
-                if (item.locked) {
-                    Meta(stringResource(Res.string.shiur_locked), icon = Icons.Outlined.Lock)
                 }
             }
             if (progress != null && progress.started) {
@@ -526,8 +445,8 @@ private fun FolderCrumb(folder: ShiurFolder, onIntent: (AppIntent) -> Unit, modi
 // ---------------------------------------------------------------------------------- states
 
 /**
- * The list area's stand-in while the first page loads. Deliberately not a spinner over the whole
- * screen: the header, the chips and the tabs are all already known and stay usable.
+ * The list area's stand-in while the catalogue loads. Deliberately not a spinner over the whole
+ * screen: the header and the tabs are both already known and stay usable.
  */
 @Composable
 private fun ShiurPlaceholder(modifier: Modifier = Modifier) {

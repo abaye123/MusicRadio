@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.metro)
@@ -37,13 +38,13 @@ kotlin {
     }
 
     // Adds one intermediate source set to the default hierarchy: `jvmCommonMain`, holding what
-    // Android and the desktop JVM share and the browser must not see.
+    // Android and the desktop JVM share and the browser does not get.
     //
-    // The Kol Halashon feature lives there rather than in commonMain so the browser build never
-    // resolves the client library at all: the API publishes no CORS policy and the web app is
-    // served from GitHub Pages with no proxy to put in front of it, so the feature does not ship
-    // there. createShiurCatalog is the seam - jvmCommonMain returns a real catalog, webMain
-    // returns null, and one expect keeps the whole decision in one place.
+    // The shiurim catalogue lives there because the site it reads sends no
+    // Access-Control-Allow-Origin, so a browser cannot call it and this app is served from GitHub
+    // Pages with no proxy to put in front of it. createShiurCatalog is the seam - jvmCommonMain
+    // returns a real catalogue, webMain returns null, and one expect keeps the decision in one
+    // place.
     //
     // Extended rather than hand-wired with dependsOn: a manual dependsOn turns the default
     // template off for the whole project, and webMain - which only exists because that template
@@ -82,15 +83,9 @@ kotlin {
             implementation(libs.materialKolor)
             implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
             api(libs.composemediaplayer.audio)
-        }
-
-        // `by getting`, not a generated accessor: those exist only for the source sets the default
-        // hierarchy names, and this one is an addition to it.
-        val jvmCommonMain by getting {
-            dependencies {
-                implementation(libs.kolhalashon.client)
-            }
         }
 
         commonTest.dependencies {
@@ -108,22 +103,6 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            // JavaFX's WebEngine is the desktop's only way past the Kol Halashon bot check without
-            // embedding a whole Chromium. Its artifacts are published per platform under a
-            // classifier, and the POMs name their siblings without one, so every module is listed
-            // explicitly for the host being built on. jpackage and the native-image packagers both
-            // build on the target OS, so the host classifier is the right one.
-            val fxClassifier = with(System.getProperty("os.name").lowercase()) {
-                val arm = System.getProperty("os.arch").lowercase() in setOf("aarch64", "arm64")
-                when {
-                    startsWith("win") -> "win"
-                    startsWith("mac") -> if (arm) "mac-aarch64" else "mac"
-                    else -> if (arm) "linux-aarch64" else "linux"
-                }
-            }
-            for (module in listOf("base", "graphics", "controls", "media", "web")) {
-                implementation("org.openjfx:javafx-$module:${libs.versions.javafx.get()}:$fxClassifier")
-            }
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.okhttp)

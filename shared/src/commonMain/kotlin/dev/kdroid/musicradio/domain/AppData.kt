@@ -51,18 +51,7 @@ data class UserSettings(
     val resumeOnLaunch: Boolean = false,
     val volume: Int = 70,
     val muted: Boolean = false,
-    /**
-     * Which language to ask a rav's catalog for. `null` follows [uiLanguage], which itself follows
-     * the device until the user picks otherwise.
-     *
-     * One setting for every rav, deliberately: someone who listens in Yiddish listens in Yiddish,
-     * and making them re-pick per rav would be asking the same question over and over.
-     */
-    val shiurLanguage: ShiurLanguage? = null,
 )
-
-/** What to actually request, once the "follow the interface" default is resolved. */
-fun UserSettings.effectiveShiurLanguage(): ShiurLanguage = shiurLanguage ?: ShiurLanguage.forUi(uiLanguage)
 
 @Immutable
 data class AppData(

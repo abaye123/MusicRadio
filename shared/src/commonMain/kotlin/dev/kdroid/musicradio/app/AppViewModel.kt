@@ -6,7 +6,6 @@ import androidx.navigation3.runtime.NavBackStack
 import dev.kdroid.musicradio.data.AppStore
 import dev.kdroid.musicradio.data.CatalogResult
 import dev.kdroid.musicradio.data.ProgressStore
-import dev.kdroid.musicradio.data.SHIUR_PAGE_SIZE
 import dev.kdroid.musicradio.data.ShiurProgress
 import dev.kdroid.musicradio.data.ShiurRepository
 import dev.kdroid.musicradio.data.isFinishedAt
@@ -15,12 +14,10 @@ import dev.kdroid.musicradio.domain.Channel
 import dev.kdroid.musicradio.domain.Rav
 import dev.kdroid.musicradio.domain.Ravs
 import dev.kdroid.musicradio.domain.ShiurItem
-import dev.kdroid.musicradio.domain.ShiurLanguage
 import dev.kdroid.musicradio.domain.SleepTimer
 import dev.kdroid.musicradio.domain.Station
 import dev.kdroid.musicradio.domain.Stations
 import dev.kdroid.musicradio.domain.UserSettings
-import dev.kdroid.musicradio.domain.effectiveShiurLanguage
 import dev.kdroid.musicradio.domain.shiurKey
 import dev.kdroid.musicradio.domain.toggleFavorite
 import dev.kdroid.musicradio.platform.Platform
@@ -69,9 +66,6 @@ private const val PROGRESS_SAVE_MS = 5_000L
 
 /** Close enough to the end to count as over, and to move on. */
 private const val END_OF_SHIUR_MS = 1_000L
-
-/** How many pages to walk looking for something unheard before giving up and taking the newest. */
-private const val AUTO_PICK_MAX_PAGES = 5
 
 private const val SLEEP_TICK_MS = 1_000L
 
@@ -194,7 +188,7 @@ class AppViewModel(
         val lastShiur = state.data.lastShiur
         if (lastShiur.isNotEmpty()) {
             val (ravId, fileId) = parseShiurKey(lastShiur) ?: return
-            val cached = shiurim.cachedFirstPage(ravId, state.data.settings.effectiveShiurLanguage())
+            val cached = shiurim.cached(ravId)
             val shiur = cached.firstOrNull { it.fileId == fileId } ?: return
             startShiur(shiur, resume = true)
             return
@@ -371,13 +365,14 @@ class AppViewModel(
 
             is AppIntent.PlayShiur -> startShiur(intent.shiur, resume = true)
 
-            is AppIntent.SetShiurLanguage -> setShiurLanguage(intent.language)
-
             is AppIntent.OpenFolder -> openFolder(intent.folder)
 
             AppIntent.CloseFolder -> closeFolder()
 
-            AppIntent.LoadMoreShiurim -> loadMore()
+            // The archive arrives whole, so there is never more to load. The intent stays because
+            // the list still asks as it nears its end, and answering "nothing to do" here is
+            // cheaper than a special case in the screen.
+            AppIntent.LoadMoreShiurim -> Unit
 
             AppIntent.RetryShiurim -> loadFirstPage(_state.value.rav.ravId)
 
@@ -607,19 +602,9 @@ class AppViewModel(
     private fun loadFirstPage(ravId: Int, autoPlay: Boolean = false) {
         if (ravId == 0) return
         catalogJob?.cancel()
-        mutate { it.copy(rav = it.rav.copy(loading = true, error = null, languageFallback = false)) }
+        mutate { it.copy(rav = it.rav.copy(loading = true, error = null)) }
         catalogJob = scope.launch {
-            val chosen = _state.value.data.settings.effectiveShiurLanguage()
-            var fallback = false
-            var result = shiurim.page(ravId, chosen)
-            // An empty answer is not an error, but it looks exactly like one on screen. A rav with
-            // nothing in the chosen language is common - Biderman has no French - so widen once
-            // rather than showing a blank list under a language chip.
-            if (result is CatalogResult.Ok && result.value.items.isEmpty() && chosen != ShiurLanguage.Any) {
-                fallback = true
-                result = shiurim.page(ravId, ShiurLanguage.Any)
-            }
-            when (result) {
+            when (val result = shiurim.shiurim(ravId)) {
                 is CatalogResult.Ok -> {
                     mutate {
                         it.copy(
@@ -627,9 +612,8 @@ class AppViewModel(
                                 ravId = ravId,
                                 items = result.value.items,
                                 loading = false,
-                                hasMore = result.value.hasMore,
+                                hasMore = false,
                                 error = null,
-                                languageFallback = fallback,
                             ),
                         )
                     }
@@ -645,40 +629,30 @@ class AppViewModel(
     private suspend fun loadFolders(ravId: Int) {
         if (_state.value.rav.folders.isNotEmpty()) return
         val result = shiurim.folders(ravId)
-        if (result is CatalogResult.Ok) {
-            val visible = result.value.filterNot { Platform.isPhone && it.hiddenOnPhone }
-            mutate { it.copy(rav = it.rav.copy(folders = visible)) }
-        }
+        if (result is CatalogResult.Ok) mutate { it.copy(rav = it.rav.copy(folders = result.value)) }
     }
 
-    private suspend fun autoPlay(firstPage: List<ShiurItem>) {
+    private fun autoPlay(archive: List<ShiurItem>) {
         // Never interrupt: opening a rav while something is already running is browsing, not a
         // request to change what is playing.
         if (_state.value.playback.status.active) return
-        val target = pickResumeTarget(firstPage) ?: return
+        val target = pickResumeTarget(archive) ?: return
         startShiur(target, resume = true)
     }
 
-    private suspend fun pickResumeTarget(firstPage: List<ShiurItem>): ShiurItem? {
-        val ravId = _state.value.rav.ravId
-        val language = _state.value.data.settings.effectiveShiurLanguage()
-        var page = firstPage
-        var fromRow = 0
-        var walked = 0
-        var newest: ShiurItem? = null
-        while (walked < AUTO_PICK_MAX_PAGES) {
-            val playable = page.filter { it.playable }
-            if (newest == null) newest = playable.firstOrNull()
-            playable.firstOrNull { _state.value.progressOf(it)?.finished != true }?.let { return it }
-            if (page.size < SHIUR_PAGE_SIZE) break
-            fromRow += SHIUR_PAGE_SIZE
-            val next = shiurim.page(ravId, language, fromRow)
-            if (next !is CatalogResult.Ok || next.value.items.isEmpty()) break
-            page = next.value.items
-            walked++
-        }
-        // Everything within reach has been heard. Replaying the newest beats playing nothing.
-        return newest
+    /**
+     * The newest recording not yet finished.
+     *
+     * One walk down the newest-first list is all three of the rules this feature was asked for:
+     * nothing heard yet gives the newest from zero, something half-heard gives that one back, and a
+     * finished newest is stepped over to the one before it, for as many as are finished. The whole
+     * archive is in hand, so there is nothing to page through.
+     */
+    private fun pickResumeTarget(archive: List<ShiurItem>): ShiurItem? {
+        val playable = archive.filter { it.playable }
+        return playable.firstOrNull { _state.value.progressOf(it)?.finished != true }
+            // Everything has been heard. Replaying the newest beats playing nothing.
+            ?: playable.firstOrNull()
     }
 
     private fun startShiur(shiur: ShiurItem, resume: Boolean) {
@@ -745,29 +719,18 @@ class AppViewModel(
         scope.launch { publishNowPlaying(_state.value.playback) }
     }
 
-    private fun setShiurLanguage(language: ShiurLanguage?) {
-        mutate { it.updateSettings { s -> s.copy(shiurLanguage = language) } }
-        persist()
-        val ravId = _state.value.rav.ravId
-        scope.launch {
-            shiurim.invalidate()
-            if (ravId != 0) loadFirstPage(ravId)
-        }
-    }
-
     private fun openFolder(folder: dev.kdroid.musicradio.domain.ShiurFolder) {
         catalogJob?.cancel()
         mutate { it.copy(rav = it.rav.copy(openFolder = folder, items = emptyList(), loading = true, error = null)) }
         catalogJob = scope.launch {
-            val language = _state.value.data.settings.effectiveShiurLanguage()
-            val result = shiurim.page(folder.ravId, language, fromRow = 0, folderId = folder.folderId)
+            val result = shiurim.shiurimInFolder(folder.ravId, folder.folderId)
             mutate {
                 when (result) {
                     is CatalogResult.Ok -> it.copy(
                         rav = it.rav.copy(
                             items = result.value.items,
                             loading = false,
-                            hasMore = result.value.hasMore,
+                            hasMore = false,
                             error = null,
                         ),
                     )
@@ -783,34 +746,6 @@ class AppViewModel(
         val ravId = _state.value.rav.ravId
         mutate { it.copy(rav = it.rav.copy(openFolder = null, items = emptyList(), loading = true)) }
         loadFirstPage(ravId)
-    }
-
-    private fun loadMore() {
-        val rav = _state.value.rav
-        if (rav.loading || rav.loadingMore || !rav.hasMore || rav.ravId == 0) return
-        mutate { it.copy(rav = it.rav.copy(loadingMore = true)) }
-        scope.launch {
-            val language = _state.value.data.settings.effectiveShiurLanguage()
-            val result = shiurim.page(
-                ravId = rav.ravId,
-                language = language,
-                fromRow = rav.items.size,
-                folderId = rav.openFolder?.folderId,
-            )
-            mutate {
-                when (result) {
-                    is CatalogResult.Ok -> it.copy(
-                        rav = it.rav.copy(
-                            items = it.rav.items + result.value.items,
-                            loadingMore = false,
-                            hasMore = result.value.hasMore,
-                        ),
-                    )
-
-                    else -> it.copy(rav = it.rav.copy(loadingMore = false, error = result.toError()))
-                }
-            }
-        }
     }
 
     // ------------------------------------------------------------------ progress

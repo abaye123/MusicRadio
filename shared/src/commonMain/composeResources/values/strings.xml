@@ -96,6 +96,8 @@
 
     <!-- Shiurim -->
     <string name="rav_biderman">Rabbi Elimelech Biderman</string>
+    <string name="rav_ettinger">Rabbi Arye Ettinger</string>
+    <string name="rav_lasri">Rabbi Michael Lasri</string>
     <string name="shiur_count">%1$d shiurim</string>
     <string name="shiur_tab_continue">Continue</string>
     <string name="shiur_tab_all">Shiurim</string>
@@ -103,18 +105,8 @@
     <string name="shiur_continue_listening">Continue listening</string>
     <string name="shiur_recent">Recently played</string>
     <string name="shiur_finished">Finished</string>
-    <string name="shiur_locked">Subscribers only</string>
     <string name="shiur_empty">No shiurim here</string>
-    <string name="shiur_language">Shiur language</string>
-    <string name="shiur_language_desc">Applies to every rav. Follows the interface language until you pick one.</string>
-    <string name="shiur_language_auto">Follow the interface</string>
-    <string name="shiur_language_fallback">No shiurim in that language, showing all of them</string>
-    <string name="shiur_lang_any">All</string>
-    <string name="shiur_lang_hebrew">Hebrew</string>
-    <string name="shiur_lang_yiddish">Yiddish</string>
-    <string name="shiur_lang_english">English</string>
-    <string name="shiur_lang_french">French</string>
-    <string name="shiur_rate_limited">Kol Halashon is limiting requests right now. Try again in a few minutes.</string>
+    <string name="shiur_rate_limited">The archive is turning requests away right now. Try again in a few minutes.</string>
     <string name="shiur_load_failed">Could not load the shiurim</string>
     <string name="shiur_retry">Try again</string>
     <string name="shiur_next">Next shiur</string>
