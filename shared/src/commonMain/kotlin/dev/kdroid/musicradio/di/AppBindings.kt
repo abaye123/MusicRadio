@@ -1,6 +1,7 @@
 package dev.kdroid.musicradio.di
 
 import dev.kdroid.musicradio.platform.IoDispatcher
+import dev.kdroid.musicradio.platform.createHttpClient
 import dev.kdroid.musicradio.player.IcyMetadata
 import dev.kdroid.musicradio.player.MediaControls
 import dev.kdroid.musicradio.player.RadioPlayer
@@ -38,7 +39,7 @@ object AppBindings {
 
     @Provides
     @SingleIn(AppScope::class)
-    fun provideHttpClient(): HttpClient = HttpClient {
+    fun provideHttpClient(): HttpClient = createHttpClient {
         // Metadata is a nicety: a station that stalls must never hold a request open for long.
         install(HttpTimeout) {
             connectTimeoutMillis = 10_000
