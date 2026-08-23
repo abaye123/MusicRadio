@@ -81,6 +81,7 @@ kotlin {
             implementation(libs.nucleus.decorated.window.tao)
             implementation(libs.nucleus.system.color)
             implementation(libs.nucleus.media.control)
+            implementation(libs.nucleus.native.http)
             implementation(libs.nucleus.native.http.ktor)
             implementation(libs.nucleus.updater.runtime)
         }

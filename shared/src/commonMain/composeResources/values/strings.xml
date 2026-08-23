@@ -89,4 +89,8 @@
     <string name="station_toker_fm">Toker FM</string>
     <string name="station_chabad_org">Chabad.org Melodies</string>
     <string name="station_lakewood_scoop">The Lakewood Scoop</string>
+    <string name="update_available">A new version is ready to install</string>
+    <string name="update_restart_title">Restart to update</string>
+    <string name="update_restart_body">The update has been downloaded. Music Radio will restart to install it, and playback will stop for a moment. You can also just close the app - it installs on the way out.</string>
+    <string name="update_restart_now">Restart now</string>
 </resources>
