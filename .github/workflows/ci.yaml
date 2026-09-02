@@ -41,8 +41,17 @@ jobs:
       - name: Compile desktop
         run: ./gradlew :desktopApp:compileKotlin --no-daemon --stacktrace
 
-      # The HTML report says which assertion failed; the console output usually does not.
-      - name: Collect test reports
+      # The quality gate AGENTS.MD names, which nothing enforced until now - so it had drifted to
+      # 73 formatting violations and seven compose-rules findings on main, two of them real
+      # behaviour rather than style. Last in the job on purpose: a red rule still fails the run,
+      # but it does so after the tests and the compile have reported, rather than hiding them.
+      # --continue so the first red rule does not hide the rest of them either.
+      - name: Lint
+        run: ./gradlew detekt ktlintCheck --no-daemon --continue --stacktrace
+
+      # The HTML report says which assertion failed, and which rule fired on which line; the
+      # console output usually says neither.
+      - name: Collect reports
         if: failure()
         uses: actions/upload-artifact@v5
         with:
@@ -50,6 +59,8 @@ jobs:
           path: |
             shared/build/reports/tests/**
             shared/build/test-results/**
+            **/build/reports/ktlint/**
+            **/build/reports/detekt/**
           if-no-files-found: ignore
 
   web:
