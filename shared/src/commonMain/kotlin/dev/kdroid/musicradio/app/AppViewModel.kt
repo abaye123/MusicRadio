@@ -373,8 +373,12 @@ class AppViewModel(
             playback.status.active -> player.pause()
 
             else -> {
-                // Rodio and Media3 both drop a finished live stream, so a cold resume replays the URL.
-                if (playback.status == PlaybackStatus.Paused) player.resume() else player.play(channel.streamUrl)
+                // The URL again, never resume(): a live stream has no position to come back to.
+                // resume() hands back whatever the backend still holds, which is as old as the
+                // pause - so someone who paused through an ad break and came back a few minutes
+                // later carried on in the middle of the ads, and reached the live broadcast only
+                // by stopping the station and starting it again. Reopening is what play means here.
+                player.play(channel.streamUrl)
                 mutate { it.copy(playback = it.playback.copy(status = PlaybackStatus.Buffering), message = null) }
             }
         }

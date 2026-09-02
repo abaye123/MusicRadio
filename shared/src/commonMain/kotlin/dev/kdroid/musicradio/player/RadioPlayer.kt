@@ -24,6 +24,15 @@ interface RadioPlayer {
 
     /** Opens [url] and starts playing. Replaces whatever was playing before. */
     fun play(url: String)
+
+    /**
+     * Carries on out of whatever the backend still holds from before [pause].
+     *
+     * Which is the wrong thing for radio, and the reason nothing on the live path calls it: the
+     * buffer is as old as the pause, so pausing through an ad break and coming back a few minutes
+     * later resumed into the middle of the ads rather than into the broadcast. Reopening the
+     * stream with [play] is what a live source means by "play again".
+     */
     fun resume()
     fun pause()
     fun stop()
