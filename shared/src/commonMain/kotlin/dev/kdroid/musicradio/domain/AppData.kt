@@ -69,5 +69,4 @@ data class AppData(
  */
 fun AppData.isFavorite(id: String): Boolean = id in favorites
 
-fun AppData.toggleFavorite(id: String): AppData =
-    copy(favorites = if (id in favorites) favorites - id else favorites + id)
+fun AppData.toggleFavorite(id: String): AppData = copy(favorites = if (id in favorites) favorites - id else favorites + id)

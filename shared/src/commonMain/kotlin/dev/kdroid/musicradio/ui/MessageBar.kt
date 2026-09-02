@@ -14,11 +14,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppMessage
 import dev.kdroid.musicradio.app.text
+import kotlinx.coroutines.delay
 import musicradio.shared.generated.resources.Res
 import musicradio.shared.generated.resources.dialog_dismiss
 import org.jetbrains.compose.resources.stringResource
@@ -27,10 +30,15 @@ private const val AUTO_DISMISS_MS = 5_000L
 
 @Composable
 fun MessageBar(message: AppMessage?, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    // The effect restarts on the message, not on the callback, so calling the parameter directly
+    // would run whichever one this composable was born with - stale the moment RootScreen hands
+    // down a new lambda while a message is on screen. rememberUpdatedState keeps the countdown
+    // running and still dismisses through the current one.
+    val dismiss by rememberUpdatedState(onDismiss)
     LaunchedEffect(message) {
         if (message != null) {
-            kotlinx.coroutines.delay(AUTO_DISMISS_MS)
-            onDismiss()
+            delay(AUTO_DISMISS_MS)
+            dismiss()
         }
     }
     AnimatedVisibility(

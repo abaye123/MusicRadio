@@ -221,7 +221,7 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 
 /** A settings line: label and supporting text on one side, whatever control on the other. */
 @Composable
-fun SettingRow(title: String, subtitle: String? = null, modifier: Modifier = Modifier, control: @Composable () -> Unit) {
+fun SettingRow(title: String, modifier: Modifier = Modifier, subtitle: String? = null, control: @Composable () -> Unit) {
     Row(
         modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -247,7 +247,7 @@ fun SettingRow(title: String, subtitle: String? = null, modifier: Modifier = Mod
  * whole thing needs. Giving it its own full-width row keeps every label readable in every language.
  */
 @Composable
-fun SettingBlock(title: String, subtitle: String? = null, modifier: Modifier = Modifier, control: @Composable () -> Unit) {
+fun SettingBlock(title: String, modifier: Modifier = Modifier, subtitle: String? = null, control: @Composable () -> Unit) {
     Column(
         modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
