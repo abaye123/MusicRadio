@@ -4,6 +4,8 @@ import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
@@ -47,7 +49,7 @@ class PlaybackService : MediaSessionService() {
             .buildUpon()
             .setTrackTypeDisabled(C.TRACK_TYPE_METADATA, true)
             .build()
-        session = MediaSession.Builder(this, player).build()
+        session = MediaSession.Builder(this, LiveAwarePlayer(player)).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -67,5 +69,30 @@ class PlaybackService : MediaSessionService() {
         }
         session = null
         super.onDestroy()
+    }
+}
+
+/**
+ * Makes "play" mean *live* again on a source that has no position.
+ *
+ * ExoPlayer resumes a paused source out of its buffer, which is as old as the pause: pausing
+ * through an ad break and coming back minutes later carried on in the middle of the ads. The app's
+ * own play button asks for the URL again, but the notification, the lock screen and Android Auto
+ * talk to this session directly and never reach the app - so the reset has to live on the player
+ * the session actually holds.
+ *
+ * Only a source sitting paused and ready is reset. The app's own path prepares first and arrives
+ * here while still buffering, so it is not prepared twice.
+ */
+private class LiveAwarePlayer(player: Player) : ForwardingPlayer(player) {
+    override fun play() {
+        // isCurrentMediaItemSeekable is false for exactly the sources with nothing to seek to -
+        // an endless Icecast stream. Anything that reports a duration is left alone.
+        if (playbackState == Player.STATE_READY && !playWhenReady && mediaItemCount > 0 && !isCurrentMediaItemSeekable) {
+            stop()
+            seekToDefaultPosition()
+            prepare()
+        }
+        super.play()
     }
 }
