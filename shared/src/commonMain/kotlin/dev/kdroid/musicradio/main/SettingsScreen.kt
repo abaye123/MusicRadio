@@ -77,9 +77,10 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 
             SettingBlock(stringResource(Res.string.settings_theme)) {
                 ThemePicker(
-                    settings.theme,
-                    Modifier.widthIn(max = 420.dp).fillMaxWidth(),
-                ) { onIntent(AppIntent.SetTheme(it)) }
+                    current = settings.theme,
+                    onPick = { onIntent(AppIntent.SetTheme(it)) },
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth(),
+                )
             }
             SettingRow(stringResource(Res.string.settings_accent)) {
                 AccentPicker(settings.accent) { onIntent(AppIntent.SetAccent(it)) }
@@ -96,13 +97,13 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 
             SettingRow(
                 stringResource(Res.string.settings_show_news),
-                stringResource(Res.string.settings_show_news_desc),
+                subtitle = stringResource(Res.string.settings_show_news_desc),
             ) {
                 Switch(checked = settings.showNews, onCheckedChange = { onIntent(AppIntent.SetShowNews(it)) })
             }
             SettingRow(
                 stringResource(Res.string.settings_autoplay),
-                stringResource(Res.string.settings_autoplay_desc),
+                subtitle = stringResource(Res.string.settings_autoplay_desc),
             ) {
                 Switch(checked = settings.resumeOnLaunch, onCheckedChange = { onIntent(AppIntent.SetResumeOnLaunch(it)) })
             }
@@ -112,7 +113,7 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 
             SettingRow(
                 stringResource(Res.string.settings_reset),
-                stringResource(Res.string.settings_reset_desc),
+                subtitle = stringResource(Res.string.settings_reset_desc),
             ) {
                 Button(
                     onClick = { onIntent(AppIntent.ResetApp) },
@@ -129,7 +130,7 @@ fun SettingsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
 }
 
 @Composable
-private fun ThemePicker(current: ThemeMode, modifier: Modifier = Modifier, onPick: (ThemeMode) -> Unit) {
+private fun ThemePicker(current: ThemeMode, onPick: (ThemeMode) -> Unit, modifier: Modifier = Modifier) {
     SingleChoiceSegmentedButtonRow(modifier) {
         ThemeMode.entries.forEachIndexed { index, mode ->
             SegmentedButton(

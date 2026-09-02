@@ -109,7 +109,11 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
                 placeholder = { Text(stringResource(Res.string.stations_search), style = MaterialTheme.typography.bodyMedium) },
                 textStyle = MaterialTheme.typography.bodyMedium,
             )
-            ViewToggle(streamsView, Modifier.height(CONTROL_HEIGHT)) { onIntent(AppIntent.SetStreamsView(it)) }
+            ViewToggle(
+                streamsView = streamsView,
+                onChange = { onIntent(AppIntent.SetStreamsView(it)) },
+                modifier = Modifier.height(CONTROL_HEIGHT),
+            )
         }
         CategoryFilter(state, onIntent, Modifier.padding(vertical = 12.dp))
         if (streamsView) {
@@ -177,7 +181,7 @@ fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mo
 
 /** Icon-only so it stays out of the search field's way; the labels live in the descriptions. */
 @Composable
-private fun ViewToggle(streamsView: Boolean, modifier: Modifier = Modifier, onChange: (Boolean) -> Unit) {
+private fun ViewToggle(streamsView: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     SingleChoiceSegmentedButtonRow(modifier) {
         SegmentedButton(
             selected = !streamsView,
