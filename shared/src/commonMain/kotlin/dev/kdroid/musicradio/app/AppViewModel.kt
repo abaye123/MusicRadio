@@ -1,6 +1,7 @@
 package dev.kdroid.musicradio.app
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.ViewModel
 import androidx.navigation3.runtime.NavBackStack
 import dev.kdroid.musicradio.data.AppStore
@@ -324,9 +325,23 @@ class AppViewModel(
         }
     }
 
+    /**
+     * Replaces the whole back stack with one destination - a rail or bottom-bar tap.
+     *
+     * Two things it deliberately does not do. It does not replace a destination with itself: a
+     * second tap on the tab you are already on used to tear the screen down and build a new one,
+     * losing its scroll position for nothing. And it does not clear and then add, which left the
+     * stack momentarily empty between the two writes - RootScreen reads `backStack.last()`, so
+     * that window has no valid answer. `withMutableSnapshot` makes the pair land as one change,
+     * which also means NavDisplay sees one target change per tap rather than two, and starts one
+     * transition instead of two overlapping ones.
+     */
     private fun setMain(key: AppKey) {
-        backStack.clear()
-        backStack.add(key)
+        if (backStack.size == 1 && backStack[0] == key) return
+        Snapshot.withMutableSnapshot {
+            backStack.clear()
+            backStack.add(key)
+        }
     }
 
     private fun selectStation(stationId: String) {
