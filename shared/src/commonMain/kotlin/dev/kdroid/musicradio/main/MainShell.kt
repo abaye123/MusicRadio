@@ -25,6 +25,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,17 +56,23 @@ fun MainShell(
     content: @Composable () -> Unit,
 ) {
     val compact = LocalCompactLayout.current
+    // The screen is called from two different places in the tree - inside a Row when the rail is
+    // showing, directly in the Column when the bottom bar is. Composed twice it would be two
+    // separate instances, so crossing the compact threshold (a window resize, a phone rotating)
+    // would throw away the scroll position and everything else the screen was remembering.
+    // movableContent moves the same instance, with its state, between the two slots.
+    val screen = remember(content) { movableContentOf { content() } }
     Column(modifier.fillMaxSize()) {
         // On desktop the brand lives in the window title bar, so it is not repeated here.
         if (!LocalHostHasTitleBar.current) BrandBar()
         if (compact) {
-            Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+            Box(Modifier.weight(1f).fillMaxWidth()) { screen() }
             MiniPlayerBar(state, onIntent)
             BottomBar(destination, onIntent)
         } else {
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 NavRail(destination, onIntent)
-                Box(Modifier.weight(1f).fillMaxHeight()) { content() }
+                Box(Modifier.weight(1f).fillMaxHeight()) { screen() }
             }
             PlayerBar(state, onIntent)
         }

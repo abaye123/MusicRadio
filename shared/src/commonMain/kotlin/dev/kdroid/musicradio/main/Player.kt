@@ -215,8 +215,6 @@ private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size:
     }
 }
 
-/** Compact host: the player as a full screen of its own. */
-
 /**
  * The compact player, and the only screen that is not inside [MainShell] - there is no bottom bar
  * behind it, so it carries its own way back.
