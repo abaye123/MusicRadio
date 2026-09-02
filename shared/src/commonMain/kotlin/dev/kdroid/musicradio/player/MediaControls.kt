@@ -11,12 +11,7 @@ enum class MediaCommand { Play, Pause, Toggle, Next, Previous, Stop }
  * [artworkUri] points at a file the media center can open on its own - see [mediaArtworkUri].
  */
 @Immutable
-data class NowPlaying(
-    val station: String = "",
-    val title: String = "",
-    val artist: String = "",
-    val artworkUri: String? = null,
-)
+data class NowPlaying(val station: String = "", val title: String = "", val artist: String = "", val artworkUri: String? = null)
 
 /**
  * The system media center — SMTC on Windows, MPRIS on Linux, Now Playing on macOS. Lets the

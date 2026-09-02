@@ -17,17 +17,17 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.VolumeOff
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.VolumeOff
-import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,8 +62,8 @@ import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.ui.StationArtwork
 import musicradio.shared.generated.resources.Res
 import musicradio.shared.generated.resources.favorite_add
-import musicradio.shared.generated.resources.player_back
 import musicradio.shared.generated.resources.favorite_remove
+import musicradio.shared.generated.resources.player_back
 import musicradio.shared.generated.resources.player_buffering
 import musicradio.shared.generated.resources.player_live
 import musicradio.shared.generated.resources.player_mute
@@ -216,6 +216,7 @@ private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size:
 }
 
 /** Compact host: the player as a full screen of its own. */
+
 /**
  * The compact player, and the only screen that is not inside [MainShell] - there is no bottom bar
  * behind it, so it carries its own way back.

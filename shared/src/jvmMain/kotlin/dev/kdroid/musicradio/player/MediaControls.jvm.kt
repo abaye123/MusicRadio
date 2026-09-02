@@ -6,8 +6,7 @@ import dev.nucleusframework.media.control.MediaMetadata
 import dev.nucleusframework.media.control.MediaPlaybackState
 import dev.nucleusframework.media.control.MediaPlaybackStatus
 
-actual fun createMediaControls(): MediaControls =
-    if (MediaControlService.isAvailable()) NucleusMediaControls() else NoMediaControls
+actual fun createMediaControls(): MediaControls = if (MediaControlService.isAvailable()) NucleusMediaControls() else NoMediaControls
 
 private class NucleusMediaControls : MediaControls {
     override val available: Boolean = true
@@ -20,11 +19,17 @@ private class NucleusMediaControls : MediaControls {
         MediaControlService.attach { event ->
             val command = when (event) {
                 MediaControlEvent.Play -> MediaCommand.Play
+
                 MediaControlEvent.Pause -> MediaCommand.Pause
+
                 MediaControlEvent.Toggle -> MediaCommand.Toggle
+
                 MediaControlEvent.Next -> MediaCommand.Next
+
                 MediaControlEvent.Previous -> MediaCommand.Previous
+
                 MediaControlEvent.Stop -> MediaCommand.Stop
+
                 // Seeking and positions mean nothing on a live stream; volume and window
                 // commands are the OS's business, not ours.
                 else -> null

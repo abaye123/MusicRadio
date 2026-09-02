@@ -28,10 +28,8 @@ private const val POLL_INTERVAL_MS = 250L
  * user's finger, so a fresh [play] holds [PlaybackStatus.Buffering] until either the stream comes
  * up or the backend reports an error.
  */
-class StreamRadioPlayer(
-    dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val backend: AudioPlayer = AudioPlayer(),
-) : RadioPlayer {
+class StreamRadioPlayer(dispatcher: CoroutineDispatcher = Dispatchers.Default, private val backend: AudioPlayer = AudioPlayer()) :
+    RadioPlayer {
 
     private enum class Wanted { Stopped, Playing, Paused }
 
@@ -105,7 +103,9 @@ class StreamRadioPlayer(
         val reported = runCatching { backend.currentPlayerState() }.getOrNull()
         _status.value = when (wanted) {
             Wanted.Stopped -> PlaybackStatus.Idle
+
             Wanted.Paused -> PlaybackStatus.Paused
+
             // IDLE while we asked for playback means the connection is still being opened.
             Wanted.Playing -> when (reported) {
                 AudioPlayerState.PLAYING -> PlaybackStatus.Playing

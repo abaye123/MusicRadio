@@ -124,14 +124,21 @@ private fun decodeWindows1255(bytes: ByteArray): String = buildString(bytes.size
         val code = byte.toInt() and 0xFF
         val char = when {
             code < 0x80 -> code.toChar()
+
             // 0xE0..0xFA is aleph through tav, contiguous in both this table and Unicode.
             code in 0xE0..0xFA -> (code - 0xE0 + 0x05D0).toChar()
+
             // Niqqud and cantillation, also contiguous.
             code in 0xC0..0xD2 -> (code - 0xC0 + 0x05B0).toChar()
+
             code == 0x93 || code == 0x94 -> '"'
+
             code == 0x91 || code == 0x92 -> '\''
+
             code == 0x96 || code == 0x97 -> '-'
+
             code == 0xA0 -> ' '
+
             else -> ' '
         }
         append(char)

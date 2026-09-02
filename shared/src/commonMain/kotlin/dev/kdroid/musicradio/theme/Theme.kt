@@ -24,12 +24,7 @@ fun rememberRadioColorScheme(accent: AccentColor = AccentColor.Indigo, isDark: B
     rememberDynamicColorScheme(seedColor = accent.seed, isDark = isDark)
 
 @Composable
-fun RadioTheme(
-    accent: AccentColor,
-    isDark: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
+fun RadioTheme(accent: AccentColor, isDark: Boolean, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = rememberRadioColorScheme(accent, isDark),
         typography = radioTypography(),
