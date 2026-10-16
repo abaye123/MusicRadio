@@ -8,6 +8,7 @@ import dev.kdroid.musicradio.data.AppStore
 import dev.kdroid.musicradio.data.seedData
 import dev.kdroid.musicradio.domain.Channel
 import dev.kdroid.musicradio.domain.Station
+import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.Stations
 import dev.kdroid.musicradio.domain.UserSettings
 import dev.kdroid.musicradio.domain.toggleFavorite
@@ -246,6 +247,9 @@ class AppViewModel(
                 stationId = station?.id.orEmpty(),
                 channelId = channel?.id.orEmpty(),
             ),
+            // Music is what most people open the app for, so the grid starts there. The filter is
+            // not remembered across launches: picking "All" or Torah lasts for the session only.
+            category = StationCategory.Music,
         )
     }
 
