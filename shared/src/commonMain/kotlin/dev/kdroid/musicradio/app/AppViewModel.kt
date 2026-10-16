@@ -117,9 +117,10 @@ class AppViewModel(
                 }
             }
         }
-        // Runs whether or not MediaControls exists. Android has no implementation of it, yet its
-        // player still needs these names for the media session behind the notification and the
-        // lock screen - gating this on `available` left that session permanently blank.
+        // Runs whether or not MediaControls exists. On Android, MediaControls only carries the skip
+        // commands, and the player still needs these names for the media session behind the
+        // notification and the lock screen. On the web there is no MediaControls at all - gating
+        // this on `available` left the Android session permanently blank.
         scope.launch {
             _state
                 .map { it.playback }

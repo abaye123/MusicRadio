@@ -6,6 +6,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.Player
+import androidx.media3.common.Player.Commands
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
@@ -94,5 +95,57 @@ private class LiveAwarePlayer(player: Player) : ForwardingPlayer(player) {
             prepare()
         }
         super.play()
+    }
+
+    // Skip commands. The session holds a single live item, so ExoPlayer has nothing to skip to and
+    // never offers these commands. Without them the notification, the lock screen, Android Auto and
+    // a headset's next/previous buttons have no way to change station. The commands are advertised
+    // here and handed to the app, which owns the station list.
+
+    override fun getAvailableCommands(): Commands = super.getAvailableCommands().withSkips()
+
+    override fun isCommandAvailable(command: Int): Boolean = command in SKIP_COMMANDS || super.isCommandAvailable(command)
+
+    override fun seekToNext() = StationSkips.dispatch(MediaCommand.Next)
+
+    override fun seekToNextMediaItem() = StationSkips.dispatch(MediaCommand.Next)
+
+    override fun seekToPrevious() = StationSkips.dispatch(MediaCommand.Previous)
+
+    override fun seekToPreviousMediaItem() = StationSkips.dispatch(MediaCommand.Previous)
+
+    // The session reads the command set off onAvailableCommandsChanged, not off
+    // getAvailableCommands(), and ForwardingPlayer passes ExoPlayer's set along unchanged. Each time
+    // ExoPlayer reported a change, the skip buttons would drop out of the notification again.
+    private val wrapped = HashMap<Player.Listener, Player.Listener>()
+
+    override fun addListener(listener: Player.Listener) {
+        val wrapper = synchronized(wrapped) {
+            if (listener in wrapped) return
+            SkipAwareListener(listener).also { wrapped[listener] = it }
+        }
+        super.addListener(wrapper)
+    }
+
+    override fun removeListener(listener: Player.Listener) {
+        val wrapper = synchronized(wrapped) { wrapped.remove(listener) } ?: return
+        super.removeListener(wrapper)
+    }
+
+    private class SkipAwareListener(private val listener: Player.Listener) : Player.Listener by listener {
+        override fun onAvailableCommandsChanged(availableCommands: Commands) {
+            listener.onAvailableCommandsChanged(availableCommands.withSkips())
+        }
+    }
+
+    private companion object {
+        val SKIP_COMMANDS = intArrayOf(
+            Player.COMMAND_SEEK_TO_NEXT,
+            Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+            Player.COMMAND_SEEK_TO_PREVIOUS,
+            Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+        )
+
+        fun Commands.withSkips(): Commands = buildUpon().addAll(*SKIP_COMMANDS).build()
     }
 }
