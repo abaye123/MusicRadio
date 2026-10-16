@@ -322,6 +322,11 @@ fun ChannelPicker(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modi
                             fontWeight = if (channel.id == state.playback.channelId) FontWeight.Bold else FontWeight.Normal,
                         )
                     },
+                    // Most playlists are told apart by their cover sooner than by their name. A
+                    // channel without its own cover shows the station logo, as in the grid.
+                    leadingIcon = {
+                        StationArtwork(station, Modifier.size(36.dp), RoundedCornerShape(8.dp), channel)
+                    },
                     onClick = {
                         expanded = false
                         onIntent(AppIntent.SelectChannel(channel.id))
