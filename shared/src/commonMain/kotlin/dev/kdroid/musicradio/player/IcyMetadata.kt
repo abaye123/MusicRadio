@@ -95,12 +95,15 @@ private val StreamTitlePattern = Regex("StreamTitle='([\\s\\S]*?)';")
  */
 private val Placeholders = setOf("line", "unknown", "-", "n/a")
 
-internal fun parseStreamTitle(text: String): String? {
-    val raw = StreamTitlePattern.find(text)?.groupValues?.get(1)?.trim().orEmpty()
-    if (raw.isEmpty()) return null
-    if (raw.lowercase() in Placeholders) return null
-    if (raw.contains("Powered By", ignoreCase = true)) return null
-    return raw
+internal fun parseStreamTitle(text: String): String? = usableTitle(StreamTitlePattern.find(text)?.groupValues?.get(1).orEmpty())
+
+/** [raw] trimmed, or `null` when it is blank or one of the [Placeholders]. */
+internal fun usableTitle(raw: String): String? {
+    val title = raw.trim()
+    if (title.isEmpty()) return null
+    if (title.lowercase() in Placeholders) return null
+    if (title.contains("Powered By", ignoreCase = true)) return null
+    return title
 }
 
 /**

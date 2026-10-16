@@ -2,7 +2,7 @@ package dev.kdroid.musicradio.app
 
 import dev.kdroid.musicradio.data.MemoryStore
 import dev.kdroid.musicradio.domain.AppData
-import dev.kdroid.musicradio.player.IcyMetadata
+import dev.kdroid.musicradio.player.NowPlayingSource
 import dev.kdroid.musicradio.player.SilentRadioPlayer
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -30,7 +30,7 @@ class NavigationTest {
     private fun viewModel(dispatcher: TestDispatcher) = AppViewModel(
         store = MemoryStore(AppData()),
         player = SilentRadioPlayer(),
-        icyMetadata = IcyMetadata(HttpClient(MockEngine { respondError(HttpStatusCode.ServiceUnavailable) })),
+        nowPlayingSource = NowPlayingSource(HttpClient(MockEngine { respondError(HttpStatusCode.ServiceUnavailable) })),
         dispatcher = dispatcher,
     )
 

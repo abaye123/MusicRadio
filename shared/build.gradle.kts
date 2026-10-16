@@ -55,6 +55,7 @@ kotlin {
             implementation(libs.materialKolor)
             implementation(libs.aboutlibraries.compose.m3)
             implementation(libs.ktor.client.core)
+            implementation(libs.kotlinx.serialization.json)
             api(libs.composemediaplayer.audio)
         }
 

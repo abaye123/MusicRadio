@@ -2,8 +2,8 @@ package dev.kdroid.musicradio.di
 
 import dev.kdroid.musicradio.platform.IoDispatcher
 import dev.kdroid.musicradio.platform.createHttpClient
-import dev.kdroid.musicradio.player.IcyMetadata
 import dev.kdroid.musicradio.player.MediaControls
+import dev.kdroid.musicradio.player.NowPlayingSource
 import dev.kdroid.musicradio.player.RadioPlayer
 import dev.kdroid.musicradio.player.createMediaControls
 import dev.kdroid.musicradio.player.createRadioPlayer
@@ -51,5 +51,5 @@ object AppBindings {
 
     @Provides
     @SingleIn(AppScope::class)
-    fun provideIcyMetadata(http: HttpClient): IcyMetadata = IcyMetadata(http)
+    fun provideNowPlayingSource(http: HttpClient): NowPlayingSource = NowPlayingSource(http)
 }

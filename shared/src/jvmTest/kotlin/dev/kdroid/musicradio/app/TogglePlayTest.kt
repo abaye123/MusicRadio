@@ -3,7 +3,7 @@ package dev.kdroid.musicradio.app
 import dev.kdroid.musicradio.data.MemoryStore
 import dev.kdroid.musicradio.domain.AppData
 import dev.kdroid.musicradio.domain.Stations
-import dev.kdroid.musicradio.player.IcyMetadata
+import dev.kdroid.musicradio.player.NowPlayingSource
 import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.player.RadioPlayer
 import io.ktor.client.HttpClient
@@ -68,14 +68,14 @@ class TogglePlayTest {
     private val channel = Stations.all.first().channels.first()
 
     /** Never reached: the metadata poll only runs while a stream is actually playing. */
-    private fun offlineMetadata() = IcyMetadata(
+    private fun offlineMetadata() = NowPlayingSource(
         HttpClient(MockEngine { respondError(HttpStatusCode.ServiceUnavailable) }),
     )
 
     private fun viewModel(player: RadioPlayer, dispatcher: TestDispatcher) = AppViewModel(
         store = MemoryStore(AppData(lastChannel = channel.id)),
         player = player,
-        icyMetadata = offlineMetadata(),
+        nowPlayingSource = offlineMetadata(),
         dispatcher = dispatcher,
     )
 

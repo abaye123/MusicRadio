@@ -13,6 +13,8 @@ androidx-lifecycle = "2.11.0"
 androidx-nav3 = "1.2.0-alpha02"
 metro = "1.4.1"
 kotlinx-datetime = "0.8.0"
+# Already on the classpath through aboutlibraries; declared so the version is ours to pin.
+kotlinx-serialization = "1.11.0"
 materialKolor = "5.0.0"
 nucleus = "2.4.7"
 # Audio engine: Media3 on Android, Rodio on desktop JVM. Built against Kotlin 2.4.10
@@ -69,6 +71,7 @@ androidx-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecy
 androidx-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle" }
 compose-nav3 = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "androidx-nav3" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
 nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
 nucleus-decorated-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }

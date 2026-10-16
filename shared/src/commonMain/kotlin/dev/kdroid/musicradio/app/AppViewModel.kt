@@ -15,11 +15,11 @@ import dev.kdroid.musicradio.domain.toggleFavorite
 import dev.kdroid.musicradio.platform.Platform
 import dev.kdroid.musicradio.platform.localizedString
 import dev.kdroid.musicradio.platform.systemUiLanguage
-import dev.kdroid.musicradio.player.IcyMetadata
 import dev.kdroid.musicradio.player.MediaCommand
 import dev.kdroid.musicradio.player.MediaControls
 import dev.kdroid.musicradio.player.NoMediaControls
 import dev.kdroid.musicradio.player.NowPlaying
+import dev.kdroid.musicradio.player.NowPlayingSource
 import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.player.RadioPlayer
 import dev.kdroid.musicradio.player.mediaArtworkUri
@@ -53,12 +53,12 @@ class AppViewModel(
     private val mediaControls: MediaControls = NoMediaControls,
     /**
      * Deliberately non-null and without a default. Metro keys bindings on the full Kotlin type,
-     * nullability included, so `IcyMetadata?` matches no binding - and rather than failing the
+     * nullability included, so `NowPlayingSource?` matches no binding - and rather than failing the
      * build it quietly took the default, leaving [watchNowPlaying] with nothing to poll and the
      * track title permanently blank on every platform. Written this way, the same mistake is a
      * compile error instead of a feature that is simply never there.
      */
-    private val icyMetadata: IcyMetadata,
+    private val nowPlayingSource: NowPlayingSource,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     @Assisted private val onQuit: () -> Unit = {},
 ) : ViewModel() {
@@ -177,7 +177,7 @@ class AppViewModel(
                     }
                     val url = Stations.channel(channelId)?.streamUrl ?: return@collectLatest
                     while (isActive) {
-                        setNowPlaying(icyMetadata.fetchTitle(url).orEmpty())
+                        setNowPlaying(nowPlayingSource.fetchTitle(url).orEmpty())
                         delay(METADATA_POLL_MS)
                     }
                 }
