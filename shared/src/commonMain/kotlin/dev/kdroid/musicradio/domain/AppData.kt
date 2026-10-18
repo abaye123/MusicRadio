@@ -59,6 +59,8 @@ data class AppData(
     val favorites: Set<String> = emptySet(),
     /** Channel id of whatever was playing when the app last closed. */
     val lastChannel: String = "",
+    /** Newest first; see [SavedSong]. */
+    val savedSongs: List<SavedSong> = emptyList(),
 )
 
 /**

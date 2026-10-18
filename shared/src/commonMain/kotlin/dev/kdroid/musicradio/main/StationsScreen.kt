@@ -22,11 +22,17 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +53,9 @@ import dev.kdroid.musicradio.ui.label
 import musicradio.shared.generated.resources.Res
 import musicradio.shared.generated.resources.category_all
 import musicradio.shared.generated.resources.favorites_empty
+import musicradio.shared.generated.resources.favorites_tab_songs
+import musicradio.shared.generated.resources.favorites_tab_stations
+import musicradio.shared.generated.resources.songs_empty
 import musicradio.shared.generated.resources.stations_empty
 import musicradio.shared.generated.resources.stations_search
 import musicradio.shared.generated.resources.view_stations
@@ -143,6 +152,37 @@ fun StationsScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Mod
  */
 @Composable
 fun FavoritesScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
+    // Saved songs sit beside the starred stations rather than in a fifth destination: both are
+    // "things I liked", and the bottom bar has no room to spare on a phone.
+    var songsTab by rememberSaveable { mutableStateOf(false) }
+    Column(modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = if (songsTab) 1 else 0) {
+            Tab(
+                selected = !songsTab,
+                onClick = { songsTab = false },
+                text = { Text(stringResource(Res.string.favorites_tab_stations)) },
+            )
+            Tab(
+                selected = songsTab,
+                onClick = { songsTab = true },
+                text = { Text(stringResource(Res.string.favorites_tab_songs)) },
+            )
+        }
+        if (songsTab) {
+            val songs = state.data.savedSongs
+            if (songs.isEmpty()) {
+                EmptyGrid(stringResource(Res.string.songs_empty), Modifier.weight(1f).padding(horizontal = 20.dp))
+            } else {
+                SavedSongsList(songs, onIntent, Modifier.weight(1f))
+            }
+        } else {
+            FavoriteGrid(state, onIntent, Modifier.weight(1f).padding(top = 12.dp))
+        }
+    }
+}
+
+@Composable
+private fun FavoriteGrid(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier = Modifier) {
     val stations = state.favorites
     val channels = state.favoriteChannels
     val grid = modifier.fillMaxSize().padding(horizontal = 20.dp)

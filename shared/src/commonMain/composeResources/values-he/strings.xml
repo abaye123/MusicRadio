@@ -41,6 +41,17 @@
     <string name="favorite_remove">הסרה מהמועדפים</string>
     <string name="favorites_empty">אין עדיין מועדפים. סמנו תחנה בכוכב כדי לשמור אותה כאן.</string>
 
+    <!-- Saved songs -->
+    <string name="favorites_tab_stations">תחנות</string>
+    <string name="favorites_tab_songs">שירים</string>
+    <string name="song_save">שמירת השיר</string>
+    <string name="song_unsave">הסרה מהשירים השמורים</string>
+    <string name="song_copy">העתקת שם השיר</string>
+    <string name="song_delete">מחיקה</string>
+    <string name="songs_empty">עדיין אין שירים שמורים. בזמן שמתנגן שיר, לחצו על סימן השמירה בנגן כדי לשמור את שמו כאן.</string>
+    <string name="message_song_saved">השיר נשמר במועדפים, בלשונית שירים.</string>
+    <string name="message_song_copied">שם השיר הועתק.</string>
+
     <!-- Settings -->
     <string name="settings_appearance">מראה</string>
     <string name="settings_theme">ערכת נושא</string>

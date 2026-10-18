@@ -1,6 +1,7 @@
 package dev.kdroid.musicradio.app
 
 import dev.kdroid.musicradio.domain.AccentColor
+import dev.kdroid.musicradio.domain.SavedSong
 import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.ThemeMode
 import dev.kdroid.musicradio.domain.UiLanguage
@@ -23,6 +24,14 @@ sealed interface AppIntent {
 
     /** [id] is a station id or a channel id; see `AppData.toggleFavorite`. */
     data class ToggleFavorite(val id: String) : AppIntent
+
+    /** Saves the track on air right now, or forgets it if it is already saved. */
+    data object ToggleSaveSong : AppIntent
+    data class RemoveSavedSong(val song: SavedSong) : AppIntent
+
+    /** The screen put a title on the clipboard; this only confirms it. */
+    data object SongCopied : AppIntent
+
     data class SetSearchQuery(val query: String) : AppIntent
 
     /** `null` clears the filter and shows every category. */

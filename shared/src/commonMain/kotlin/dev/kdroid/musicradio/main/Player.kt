@@ -6,22 +6,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.SkipNext
@@ -57,7 +62,9 @@ import androidx.compose.ui.unit.dp
 import dev.kdroid.musicradio.app.AppIntent
 import dev.kdroid.musicradio.app.AppState
 import dev.kdroid.musicradio.domain.Station
+import dev.kdroid.musicradio.domain.cleanSongTitle
 import dev.kdroid.musicradio.domain.isFavorite
+import dev.kdroid.musicradio.domain.isSongSaved
 import dev.kdroid.musicradio.player.PlaybackStatus
 import dev.kdroid.musicradio.ui.StationArtwork
 import musicradio.shared.generated.resources.Res
@@ -75,6 +82,8 @@ import musicradio.shared.generated.resources.player_play
 import musicradio.shared.generated.resources.player_previous
 import musicradio.shared.generated.resources.player_stop
 import musicradio.shared.generated.resources.player_unmute
+import musicradio.shared.generated.resources.song_save
+import musicradio.shared.generated.resources.song_unsave
 import org.jetbrains.compose.resources.stringResource
 
 /** The channel's own name, falling back to the station's for a station's flagship stream. */
@@ -114,6 +123,7 @@ fun PlayerBar(state: AppState, onIntent: (AppIntent) -> Unit, modifier: Modifier
                 // there is no way to bookmark what is playing: the grid tile that carries the
                 // other star is not on screen once you are inside a station's channels.
                 FavoriteButton(state, onIntent)
+                SaveSongButton(state, onIntent)
                 ChannelPicker(state, onIntent)
                 TransportControls(state, onIntent, big = false)
                 VolumeControl(state, onIntent, Modifier.weight(1f))
@@ -216,6 +226,25 @@ private fun FavoriteButton(state: AppState, onIntent: (AppIntent) -> Unit, size:
 }
 
 /**
+ * Keeps the title of the track on air in the saved songs list. Only there while the stream names a
+ * track: most stations never do, and a button that saves nothing is worse than no button.
+ */
+@Composable
+private fun SaveSongButton(state: AppState, onIntent: (AppIntent) -> Unit, size: Dp = 24.dp) {
+    val song = state.playback.nowPlaying
+    if (song.isBlank() || state.currentStation == null) return
+    val saved = state.data.isSongSaved(song.cleanSongTitle(), state.playback.channelId)
+    IconButton(onClick = { onIntent(AppIntent.ToggleSaveSong) }) {
+        Icon(
+            if (saved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkAdd,
+            stringResource(if (saved) Res.string.song_unsave else Res.string.song_save),
+            modifier = Modifier.size(size),
+            tint = if (saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
  * The compact player, and the only screen that is not inside [MainShell] - there is no bottom bar
  * behind it, so it carries its own way back.
  *
@@ -231,7 +260,11 @@ fun NowPlayingScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: M
         val short = maxHeight < ShortWindowHeight
         val gap = if (short) 8.dp else 20.dp
         val artworkMax = maxWidth * 0.8f
-        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = if (short) 8.dp else 16.dp)) {
+        // Outside MainShell there is no bar above or below to keep clear of the system ones.
+        Column(
+            Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 24.dp, vertical = if (short) 8.dp else 16.dp),
+        ) {
             IconButton(onClick = { onIntent(AppIntent.Back) }, modifier = Modifier.align(Alignment.Start)) {
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(Res.string.player_back))
             }
@@ -287,6 +320,7 @@ fun NowPlayingScreen(state: AppState, onIntent: (AppIntent) -> Unit, modifier: M
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     FavoriteButton(state, onIntent, size = 28.dp)
+                    SaveSongButton(state, onIntent, size = 28.dp)
                     ChannelPicker(state, onIntent)
                 }
                 TransportControls(state, onIntent, big = !short)

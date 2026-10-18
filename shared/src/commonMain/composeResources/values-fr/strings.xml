@@ -41,6 +41,17 @@
     <string name="favorite_remove">Retirer des favoris</string>
     <string name="favorites_empty">Aucun favori. Ajoutez une étoile à une station pour la garder ici.</string>
 
+    <!-- Saved songs -->
+    <string name="favorites_tab_stations">Stations</string>
+    <string name="favorites_tab_songs">Titres</string>
+    <string name="song_save">Enregistrer ce titre</string>
+    <string name="song_unsave">Retirer des titres enregistrés</string>
+    <string name="song_copy">Copier le nom du titre</string>
+    <string name="song_delete">Supprimer</string>
+    <string name="songs_empty">Aucun titre enregistré. Pendant la lecture, touchez le signet du lecteur pour garder son nom ici.</string>
+    <string name="message_song_saved">Enregistré dans Favoris, Titres.</string>
+    <string name="message_song_copied">Nom du titre copié.</string>
+
     <!-- Settings -->
     <string name="settings_appearance">Apparence</string>
     <string name="settings_theme">Thème</string>

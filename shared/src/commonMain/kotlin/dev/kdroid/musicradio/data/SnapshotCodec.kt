@@ -2,6 +2,7 @@ package dev.kdroid.musicradio.data
 
 import dev.kdroid.musicradio.domain.AccentColor
 import dev.kdroid.musicradio.domain.AppData
+import dev.kdroid.musicradio.domain.SavedSong
 import dev.kdroid.musicradio.domain.ThemeMode
 import dev.kdroid.musicradio.domain.UiLanguage
 import dev.kdroid.musicradio.domain.UserSettings
@@ -22,6 +23,7 @@ private const val KEY_VOLUME = "volume"
 private const val KEY_MUTED = "muted"
 private const val KEY_FAVORITES = "favorites"
 private const val KEY_LAST_CHANNEL = "lastChannel"
+private const val KEY_SONG = "song"
 
 fun encodeSnapshot(data: AppData): String {
     val s = data.settings
@@ -37,10 +39,22 @@ fun encodeSnapshot(data: AppData): String {
         add("$KEY_MUTED=${s.muted}")
         add("$KEY_FAVORITES=${data.favorites.sorted().joinToString(",")}")
         add("$KEY_LAST_CHANNEL=${data.lastChannel}")
+        // One line per song, repeating the key: a title can hold any character the other keys
+        // would split on, short of the tab and the newline, which saving strips out.
+        data.savedSongs.forEach { add("$KEY_SONG=${it.savedAt}\t${it.channelId}\t${it.title}") }
     }.joinToString("\n")
 }
 
 fun decodeSnapshot(raw: String): AppData {
+    val songs = raw.lineSequence()
+        .filter { it.startsWith("$KEY_SONG=") }
+        .mapNotNull { line ->
+            val fields = line.substringAfter('=').split('\t', limit = 3)
+            val savedAt = fields.firstOrNull()?.trim()?.toLongOrNull() ?: return@mapNotNull null
+            val title = fields.getOrNull(2)?.trim().orEmpty()
+            if (title.isEmpty()) null else SavedSong(title, fields[1].trim(), savedAt)
+        }
+        .toList()
     val map = raw.lineSequence()
         .mapNotNull { line ->
             val i = line.indexOf('=')
@@ -66,5 +80,6 @@ fun decodeSnapshot(raw: String): AppData {
         settings = settings,
         favorites = map[KEY_FAVORITES].orEmpty().split(',').filter { it.isNotBlank() }.toSet(),
         lastChannel = map[KEY_LAST_CHANNEL].orEmpty(),
+        savedSongs = songs,
     )
 }

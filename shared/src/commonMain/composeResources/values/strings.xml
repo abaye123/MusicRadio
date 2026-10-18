@@ -41,6 +41,17 @@
     <string name="favorite_remove">Remove from favorites</string>
     <string name="favorites_empty">No favorites yet. Star a station to keep it here.</string>
 
+    <!-- Saved songs -->
+    <string name="favorites_tab_stations">Stations</string>
+    <string name="favorites_tab_songs">Songs</string>
+    <string name="song_save">Save this song</string>
+    <string name="song_unsave">Remove from saved songs</string>
+    <string name="song_copy">Copy the song name</string>
+    <string name="song_delete">Delete</string>
+    <string name="songs_empty">No saved songs yet. While a song is playing, tap the bookmark in the player to keep its name here.</string>
+    <string name="message_song_saved">Saved under Favorites, Songs.</string>
+    <string name="message_song_copied">Song name copied.</string>
+
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>

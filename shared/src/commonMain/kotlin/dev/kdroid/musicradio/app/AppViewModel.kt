@@ -11,7 +11,9 @@ import dev.kdroid.musicradio.domain.Station
 import dev.kdroid.musicradio.domain.StationCategory
 import dev.kdroid.musicradio.domain.Stations
 import dev.kdroid.musicradio.domain.UserSettings
+import dev.kdroid.musicradio.domain.removeSavedSong
 import dev.kdroid.musicradio.domain.toggleFavorite
+import dev.kdroid.musicradio.domain.toggleSavedSong
 import dev.kdroid.musicradio.platform.Platform
 import dev.kdroid.musicradio.platform.localizedString
 import dev.kdroid.musicradio.platform.systemUiLanguage
@@ -260,6 +262,16 @@ class AppViewModel(
 
         is AppIntent.ToggleFavorite -> s.copy(data = s.data.toggleFavorite(intent.id))
 
+        AppIntent.ToggleSaveSong -> {
+            val data = s.data.toggleSavedSong(s.playback.nowPlaying, s.playback.channelId, Platform.now())
+            val added = data.savedSongs.size > s.data.savedSongs.size
+            s.copy(data = data, message = if (added) AppMessage.SongSaved else s.message)
+        }
+
+        is AppIntent.RemoveSavedSong -> s.copy(data = s.data.removeSavedSong(intent.song))
+
+        AppIntent.SongCopied -> s.copy(message = AppMessage.SongCopied)
+
         is AppIntent.SetSearchQuery -> s.copy(query = intent.query)
 
         is AppIntent.SetCategory -> s.copy(category = intent.category)
@@ -301,7 +313,7 @@ class AppViewModel(
     private fun afterReduce(intent: AppIntent) {
         when (intent) {
             is AppIntent.SetSearchQuery, is AppIntent.SetCategory,
-            AppIntent.DismissMessage, AppIntent.DismissDialog,
+            AppIntent.DismissMessage, AppIntent.DismissDialog, AppIntent.SongCopied,
             is AppIntent.Navigate, AppIntent.OpenNowPlaying, AppIntent.Back,
             -> Unit
 
