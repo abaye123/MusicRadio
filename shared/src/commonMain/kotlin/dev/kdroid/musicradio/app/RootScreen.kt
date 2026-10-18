@@ -8,7 +8,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -48,7 +51,8 @@ fun RootScreen(state: AppState, backStack: NavBackStack<AppKey>, onIntent: (AppI
                 MessageBar(
                     message = state.message,
                     onDismiss = remember(onIntent) { { onIntent(AppIntent.DismissMessage) } },
-                    modifier = Modifier.align(Alignment.BottomCenter),
+                    // Clear of the system navigation bar, which the edge-to-edge window draws over.
+                    modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars),
                 )
                 AppDialogHost(dialog = state.dialog, onIntent = onIntent)
             }
