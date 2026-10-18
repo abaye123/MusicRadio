@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drawn on the 512-unit grid of the source artwork, scaled into the 66dp safe zone of the 108dp layer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.16"
+        android:scaleY="0.16"
+        android:translateX="13.04"
+        android:translateY="13.76">
+        <path
+            android:pathData="M150,376 L150,214 L256,336 L362,214 L362,376"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="48"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M228,214 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0"
+            android:fillColor="#FFFFFFFF" />
+        <path
+            android:pathData="M215,173 A58,58 0 0,1 297,173 M185.3,143.3 A100,100 0 0,1 326.7,143.3"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="22"
+            android:strokeLineCap="round" />
+    </group>
+</vector>
